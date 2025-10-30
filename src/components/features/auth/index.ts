@@ -1,0 +1,1 @@
+export { SplitAuthScreen } from './split-auth-screen';

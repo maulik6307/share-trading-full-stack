@@ -1,0 +1,13 @@
+export { OrderEntryForm } from './order-entry-form';
+export { OrderBook } from './order-book';
+export { OrderHistory } from './order-history';
+export { PositionsDashboard } from './positions-dashboard';
+export { PositionPerformance } from './position-performance';
+export { MarketWatchlist } from './market-watchlist';
+export { PriceTicker } from './price-ticker';
+export { MarketDataChart } from './market-data-chart';
+export { PriceAlerts } from './price-alerts';
+export { StrategyDeploymentModal } from './strategy-deployment-modal';
+export { PaperTradingSessionComponent, type PaperTradingSession } from './paper-trading-session';
+export { PaperTradingSessionsManager } from './paper-trading-sessions-manager';
+export { PerformanceMonitor } from './performance-monitor';
