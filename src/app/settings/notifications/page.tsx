@@ -122,6 +122,7 @@ export default function NotificationsPage() {
               push: preferences.push.enabled,
               sms: preferences.sms.enabled,
               trading: preferences.trading.orderFills,
+              marketing: false, // Default value
               system: preferences.inApp.system,
             },
           },

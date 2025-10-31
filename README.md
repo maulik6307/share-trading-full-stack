@@ -60,7 +60,7 @@ A production-polished, investor-grade web interface that demonstrates the full u
 
 ```
 sharetrading-ui-mvp/
-├── src/
+├── src/                        # Frontend (Next.js)
 │   ├── app/                    # Next.js App Router pages
 │   │   ├── dashboard/          # Dashboard pages
 │   │   ├── strategies/         # Strategy management
@@ -80,6 +80,7 @@ sharetrading-ui-mvp/
 │   │   ├── layout/             # Layout components
 │   │   └── providers/          # Context providers
 │   ├── lib/
+│   │   ├── api/                # API service layer
 │   │   ├── animations.ts       # Framer Motion variants
 │   │   ├── hooks/              # Custom React hooks
 │   │   ├── utils/              # Utility functions
@@ -88,6 +89,16 @@ sharetrading-ui-mvp/
 │   ├── mocks/                  # Mock data and services
 │   ├── stores/                 # Zustand stores
 │   └── styles/                 # Global styles
+├── backend/                    # Backend (Node.js + Express + MongoDB)
+│   ├── src/
+│   │   ├── controllers/        # Route controllers
+│   │   ├── middleware/         # Custom middleware
+│   │   ├── models/             # Mongoose models
+│   │   ├── routes/             # Express routes
+│   │   ├── utils/              # Utility functions
+│   │   └── server.js           # Main server file
+│   ├── .env                    # Environment variables
+│   └── package.json            # Backend dependencies
 ├── .kiro/                      # Kiro IDE specifications
 ├── public/                     # Static assets
 └── docs/                       # Documentation
@@ -107,18 +118,52 @@ sharetrading-ui-mvp/
    cd sharetrading-ui-mvp
    ```
 
-2. **Install dependencies**
+2. **Install frontend dependencies**
    ```bash
    npm install
    ```
 
-3. **Start development server**
+3. **Install backend dependencies**
    ```bash
-   npm run dev
+   cd backend
+   npm install
+   cd ..
    ```
 
-4. **Open in browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+4. **Set up environment variables**
+   ```bash
+   # Frontend
+   cp .env.local.example .env.local
+   
+   # Backend
+   cp backend/.env.example backend/.env
+   # Edit backend/.env with your MongoDB connection and JWT secrets
+   ```
+
+5. **Start MongoDB**
+   Make sure MongoDB is running on `mongodb://localhost:27017`
+
+6. **Start development servers**
+   
+   **Option 1: Start both servers separately**
+   ```bash
+   # Terminal 1 - Backend
+   cd backend
+   npm run dev
+   
+   # Terminal 2 - Frontend
+   npm run dev
+   ```
+   
+   **Option 2: Use concurrently (recommended)**
+   ```bash
+   npm run dev:full
+   ```
+
+7. **Open in browser**
+   - Frontend: [http://localhost:3000](http://localhost:3000)
+   - Backend API: [http://localhost:5000](http://localhost:5000)
+   - API Health Check: [http://localhost:5000/health](http://localhost:5000/health)
 
 ### Available Scripts
 

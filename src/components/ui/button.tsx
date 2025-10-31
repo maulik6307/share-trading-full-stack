@@ -16,7 +16,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', loading = false, animated = true, disabled, children, ...props }, ref) => {
-    const ButtonComponent = animated ? motion.button : 'button';
+    const ButtonComponent = animated ? motion.button : ('button' as any);
     const animationProps = animated ? {
       variants: animationVariants,
       initial: 'rest',

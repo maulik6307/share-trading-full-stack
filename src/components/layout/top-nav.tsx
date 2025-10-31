@@ -39,9 +39,16 @@ export function TopNav({ user }: TopNavProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSignOut = () => {
-    signOut();
-    router.push('/');
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      // Force a hard redirect to ensure clean state
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if logout fails, redirect to home
+      window.location.href = '/';
+    }
   };
 
   const handleProfileClick = () => {

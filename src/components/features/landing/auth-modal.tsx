@@ -64,7 +64,9 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
           description: 'You have successfully signed in.',
         });
       } else {
-        await signUp(formData.name, formData.email, formData.password);
+        // Generate username from email
+        const username = formData.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        await signUp(formData.name, formData.email, username, formData.password);
         addToast({
           type: 'success',
           title: 'Account created!',

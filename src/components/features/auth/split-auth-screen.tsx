@@ -2,15 +2,9 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Eye, 
-  EyeOff, 
-  Mail, 
-  Lock, 
-  User, 
-  Phone,
-  Globe,
-  ArrowRight,
+import {
+  Eye,
+  EyeOff,
   TrendingUp,
   BarChart3,
   Shield,
@@ -18,8 +12,10 @@ import {
   X
 } from 'lucide-react';
 import { Button, Input, useToast } from '@/components/ui';
+import { PhoneNumberInput } from '@/components/ui/phone-input';
+import { CountrySelect } from '@/components/ui/country-select';
+import { ForgotPasswordModal } from './forgot-password-modal';
 import { useAuthStore } from '@/stores/auth-store';
-import { useTheme } from '@/components/providers/theme-provider';
 
 interface SplitAuthScreenProps {
   isOpen: boolean;
@@ -33,19 +29,19 @@ type AuthMode = 'signin' | 'signup';
 export function SplitAuthScreen({ isOpen, onClose, onSuccess, initialMode = 'signin' }: SplitAuthScreenProps) {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     phone: '',
-    country: 'United States',
+    country: '',
     agreeToTerms: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { signIn, signUp, isLoading } = useAuthStore();
   const { addToast } = useToast();
-  const { mode: themeMode } = useTheme();
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -54,8 +50,8 @@ export function SplitAuthScreen({ isOpen, onClose, onSuccess, initialMode = 'sig
       if (!formData.name.trim()) {
         newErrors.name = 'Name is required';
       }
-      if (!formData.phone.trim()) {
-        newErrors.phone = 'Phone number is required';
+      if (!formData.phone || formData.phone.trim().length < 10) {
+        newErrors.phone = 'Please enter a valid phone number';
       }
       if (!formData.agreeToTerms) {
         newErrors.terms = 'You must agree to the terms and conditions';
@@ -80,7 +76,7 @@ export function SplitAuthScreen({ isOpen, onClose, onSuccess, initialMode = 'sig
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     try {
@@ -92,14 +88,16 @@ export function SplitAuthScreen({ isOpen, onClose, onSuccess, initialMode = 'sig
           description: 'You have successfully signed in.',
         });
       } else {
-        await signUp(formData.name, formData.email, formData.password);
+        // Generate username from email
+        const username = formData.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        await signUp(formData.name, formData.email, username, formData.password, formData.phone, formData.country);
         addToast({
           type: 'success',
           title: 'Account created!',
           description: 'Welcome to ShareTrading. Let\'s get you started.',
         });
       }
-      
+
       onSuccess();
     } catch (error) {
       addToast({
@@ -120,13 +118,13 @@ export function SplitAuthScreen({ isOpen, onClose, onSuccess, initialMode = 'sig
   const switchMode = () => {
     setMode(mode === 'signin' ? 'signup' : 'signin');
     setErrors({});
-    setFormData({ 
-      name: '', 
-      email: '', 
-      password: '', 
-      phone: '', 
-      country: 'United States', 
-      agreeToTerms: false 
+    setFormData({
+      name: '',
+      email: '',
+      password: '',
+      phone: '',
+      country: '',
+      agreeToTerms: false
     });
   };
 
@@ -196,7 +194,7 @@ export function SplitAuthScreen({ isOpen, onClose, onSuccess, initialMode = 'sig
                   {mode === 'signin' ? 'Login' : 'Signup'}
                 </h1>
                 <p className="font-professional text-gray-600 dark:text-gray-400">
-                  {mode === 'signin' 
+                  {mode === 'signin'
                     ? 'Enter your email or username below to login to your account'
                     : 'Enter your details below to Signup'
                   }
@@ -283,20 +281,13 @@ export function SplitAuthScreen({ isOpen, onClose, onSuccess, initialMode = 'sig
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Phone
                           </label>
-                          <div className="flex">
-                            <div className="flex items-center px-3 bg-gray-50 dark:bg-neutral-800 border border-r-0 border-gray-200 dark:border-neutral-700 rounded-l-lg">
-                              <span className="text-sm text-gray-600 dark:text-gray-400">🇺🇸 +1</span>
-                            </div>
-                            <Input
-                              type="tel"
-                              placeholder=""
-                              value={formData.phone}
-                              onChange={(e) => handleInputChange('phone', e.target.value)}
-                              error={errors.phone}
-                              disabled={isLoading}
-                              className="bg-gray-50 dark:bg-neutral-800 border-gray-200 dark:border-neutral-700 rounded-l-none"
-                            />
-                          </div>
+                          <PhoneNumberInput
+                            value={formData.phone}
+                            onChange={(value) => handleInputChange('phone', value || '')}
+                            placeholder="Enter your phone number"
+                            error={errors.phone}
+                            disabled={isLoading}
+                          />
                         </div>
                       </div>
                     )}
@@ -329,6 +320,18 @@ export function SplitAuthScreen({ isOpen, onClose, onSuccess, initialMode = 'sig
                             )}
                           </button>
                         </div>
+                        {mode === 'signin' && (
+                          <div className="text-right">
+                            <button
+                              type="button"
+                              onClick={() => setShowForgotPassword(true)}
+                              className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                              disabled={isLoading}
+                            >
+                              Forgot password?
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       {mode === 'signup' && (
@@ -336,34 +339,16 @@ export function SplitAuthScreen({ isOpen, onClose, onSuccess, initialMode = 'sig
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Country <span className="text-red-500">*</span>
                           </label>
-                          <select
+                          <CountrySelect
                             value={formData.country}
-                            onChange={(e) => handleInputChange('country', e.target.value)}
-                            className="w-full px-3 py-2 bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            onChange={(value) => handleInputChange('country', value)}
+                            placeholder="Select your country"
+                            error={errors.country}
                             disabled={isLoading}
-                          >
-                            <option value="United States">United States</option>
-                            <option value="Canada">Canada</option>
-                            <option value="United Kingdom">United Kingdom</option>
-                            <option value="Germany">Germany</option>
-                            <option value="France">France</option>
-                            <option value="Japan">Japan</option>
-                            <option value="Australia">Australia</option>
-                          </select>
+                          />
                         </div>
                       )}
                     </div>
-
-                    {mode === 'signin' && (
-                      <div className="text-right">
-                        <button
-                          type="button"
-                          className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-                        >
-                          Forgot password?
-                        </button>
-                      </div>
-                    )}
 
                     {mode === 'signup' && (
                       <div className="flex items-start space-x-2">
@@ -475,6 +460,17 @@ export function SplitAuthScreen({ isOpen, onClose, onSuccess, initialMode = 'sig
           </div>
         </div>
       </motion.div>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+        onBackToLogin={() => {
+          setShowForgotPassword(false);
+          // Keep the main auth modal open and in signin mode
+          setMode('signin');
+        }}
+      />
     </div>
   );
 }

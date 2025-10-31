@@ -30,5 +30,9 @@ export type { DataTableProps, ColumnDef, PaginationConfig, SortingConfig, Filter
 
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
 
+export { PhoneNumberInput } from './phone-input';
+
+export { CountrySelect } from './country-select';
+
 // Chart Components
 export * from './charts';

@@ -4,12 +4,22 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:full": "concurrently \"npm run dev:backend\" \"npm run dev\" --names \"backend,frontend\" --prefix-colors \"blue,green\"",
     "build": "next build",
+    "build:backend": "cd backend && npm run build",
+    "build:full": "npm run build:backend && npm run build",
     "start": "next start",
+    "start:backend": "cd backend && npm start",
+    "start:full": "concurrently \"npm run start:backend\" \"npm run start\" --names \"backend,frontend\" --prefix-colors \"blue,green\"",
     "lint": "next lint",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:full": "npm run lint && npm run lint:backend",
     "type-check": "tsc --noEmit",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "test:backend": "cd backend && npm test",
+    "test:full": "npm run test && npm run test:backend"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -19,12 +29,16 @@
     "framer-motion": "^11.0.0",
     "lucide-react": "^0.400.0",
     "next": "^14.2.0",
+    "node-fetch": "^2.7.0",
     "react": "^18.3.0",
     "react-countup": "^6.5.3",
     "react-dom": "^18.3.0",
     "react-intersection-observer": "^10.0.0",
+    "react-phone-number-input": "^3.4.13",
+    "react-select": "^5.10.2",
     "recharts": "^2.12.0",
     "tailwind-merge": "^2.2.0",
+    "world-countries": "^5.1.0",
     "zustand": "^4.5.0"
   },
   "devDependencies": {
@@ -38,6 +52,7 @@
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "autoprefixer": "^10.4.0",
+    "concurrently": "^9.2.1",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0",
     "jest": "^30.2.0",

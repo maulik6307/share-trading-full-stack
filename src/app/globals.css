@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --select-bg: white;
+  --select-border: #e5e7eb;
+  --select-text: #111827;
+  --select-hover: #f3f4f6;
+  --select-selected: #3b82f6;
+}
+
+.dark {
+  --select-bg: #1f2937;
+  --select-border: #4b5563;
+  --select-text: #f9fafb;
+  --select-hover: #374151;
+  --select-selected: #1e40af;
+}
+
 @layer utilities {
   .line-clamp-2 {
     overflow: hidden;
@@ -9,7 +25,7 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
-  
+
   .line-clamp-3 {
     overflow: hidden;
     display: -webkit-box;
@@ -30,16 +46,16 @@
     --color-bg-secondary: #fafafa;
     --color-bg-tertiary: #f5f5f5;
     --color-bg-elevated: #ffffff;
-    
+
     --color-text-primary: #171717;
     --color-text-secondary: #525252;
     --color-text-tertiary: #737373;
     --color-text-inverse: #ffffff;
-    
+
     --color-border-primary: #e5e5e5;
     --color-border-secondary: #d4d4d4;
     --color-border-focus: #0ea5e9;
-    
+
     --color-interactive-primary: #0284c7;
     --color-interactive-primary-hover: #0369a1;
     --color-interactive-primary-active: #075985;
@@ -47,7 +63,7 @@
     --color-interactive-secondary-hover: #e5e5e5;
     --color-interactive-tertiary: transparent;
     --color-interactive-tertiary-hover: #f5f5f5;
-    
+
     --color-semantic-success: #16a34a;
     --color-semantic-success-bg: #f0fdf4;
     --color-semantic-danger: #dc2626;
@@ -130,6 +146,7 @@
     opacity: 0;
     transform: scale(0.95) translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -141,8 +158,491 @@
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+
   to {
     opacity: 0;
     transform: scale(0.95) translateY(-10px);
   }
+}
+
+/* Phone Input Styles */
+.PhoneInput {
+  display: flex;
+  align-items: center;
+}
+
+.PhoneInputCountry {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background-color: #f9fafb;
+  border: 1px solid #d1d5db;
+  border-right: none;
+  border-radius: 0.375rem 0 0 0.375rem;
+  font-size: 0.875rem;
+  color: #111827;
+}
+
+.PhoneInputCountrySelect {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.PhoneInputCountrySelectArrow {
+  margin-left: 0.25rem;
+  color: #6b7280;
+  width: 12px;
+  height: 12px;
+}
+
+.PhoneInputInput {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-left: none;
+  border-radius: 0 0.375rem 0.375rem 0;
+  font-size: 0.875rem;
+  background-color: white;
+  color: #111827;
+}
+
+.PhoneInputInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.PhoneInputInput::placeholder {
+  color: #6b7280;
+}
+
+/* Dark mode styles */
+.dark .PhoneInputCountry {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+.dark .PhoneInputCountrySelect {
+  color: #f9fafb;
+}
+
+.dark .PhoneInputCountrySelectArrow {
+  color: #9ca3af;
+}
+
+.dark .PhoneInputInput {
+  background-color: #1f2937;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+.dark .PhoneInputInput:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.dark .PhoneInputInput::placeholder {
+  color: #9ca3af;
+}
+
+/* Phone Input Country Dropdown */
+.PhoneInputCountrySelect option {
+  background-color: white;
+  color: #111827;
+}
+
+.dark .PhoneInputCountrySelect option {
+  background-color: #1f2937;
+  color: #f9fafb;
+}
+
+/* Error states */
+.phone-input-error .PhoneInputCountry,
+.phone-input-error .PhoneInputInput {
+  border-color: #ef4444;
+}
+
+.phone-input-error .PhoneInputInput:focus,
+.phone-input-error .PhoneInputCountry:focus-within {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px #ef4444;
+}
+
+/* React Select Styles */
+.react-select-container .react-select__control {
+  border-color: #d1d5db !important;
+  box-shadow: none !important;
+  background-color: white !important;
+}
+
+.react-select-container .react-select__control:hover {
+  border-color: #9ca3af !important;
+}
+
+.react-select-container .react-select__control--is-focused {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 1px #3b82f6 !important;
+}
+
+.react-select-container .react-select__menu {
+  z-index: 99999 !important;
+  background-color: white !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.react-select-container .react-select__menu-list {
+  background-color: white !important;
+}
+
+.react-select-container .react-select__single-value {
+  color: #111827 !important;
+}
+
+.react-select-container .react-select__input-container {
+  color: #111827 !important;
+}
+
+.react-select-container .react-select__placeholder {
+  color: #6b7280 !important;
+}
+
+.react-select-container .react-select__dropdown-indicator {
+  color: #6b7280 !important;
+}
+
+.react-select-container .react-select__clear-indicator {
+  color: #6b7280 !important;
+}
+
+/* Dark mode styles */
+.dark .react-select-container .react-select__control {
+  background-color: #1f2937 !important;
+  border-color: #4b5563 !important;
+}
+
+.dark .react-select-container .react-select__control:hover {
+  border-color: #6b7280 !important;
+}
+
+.dark .react-select-container .react-select__control--is-focused {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 1px #3b82f6 !important;
+}
+
+.dark .react-select-container .react-select__single-value {
+  color: #f9fafb !important;
+}
+
+.dark .react-select-container .react-select__input-container {
+  color: #f9fafb !important;
+}
+
+.dark .react-select-container .react-select__input {
+  color: #f9fafb !important;
+}
+
+.dark .react-select-container .react-select__placeholder {
+  color: #9ca3af !important;
+}
+
+.dark .react-select-container .react-select__dropdown-indicator {
+  color: #9ca3af !important;
+}
+
+.dark .react-select-container .react-select__clear-indicator {
+  color: #9ca3af !important;
+}
+
+.dark .react-select-container .react-select__menu {
+  background-color: #1f2937 !important;
+  border-color: #4b5563 !important;
+}
+
+.dark .react-select-container .react-select__menu-list {
+  background-color: #1f2937 !important;
+}
+
+.dark .react-select-container .react-select__option {
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
+}
+
+.dark .react-select-container .react-select__option--is-focused {
+  background-color: #374151 !important;
+}
+
+.dark .react-select-container .react-select__option--is-selected {
+  background-color: #1e40af !important;
+  color: #f9fafb !important;
+}
+
+/* Menu Portal Styles - Target the portal directly */
+body > div[class*="react-select"] .react-select__menu {
+  background-color: white !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  z-index: 99999 !important;
+}
+
+body > div[class*="react-select"] {
+  z-index: 99999 !important;
+}
+
+body > div[class*="react-select"] .react-select__menu-list {
+  background-color: white !important;
+}
+
+body > div[class*="react-select"] .react-select__option {
+  background-color: white !important;
+  color: #111827 !important;
+}
+
+body > div[class*="react-select"] .react-select__option--is-focused {
+  background-color: #f3f4f6 !important;
+  color: #111827 !important;
+}
+
+body > div[class*="react-select"] .react-select__option--is-selected {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+/* Dark mode for menu portal */
+.dark body > div[class*="react-select"] .react-select__menu {
+  background-color: #1f2937 !important;
+  border: 1px solid #4b5563 !important;
+}
+
+.dark body > div[class*="react-select"] .react-select__menu-list {
+  background-color: #1f2937 !important;
+}
+
+.dark body > div[class*="react-select"] .react-select__option {
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
+}
+
+.dark body > div[class*="react-select"] .react-select__option--is-focused {
+  background-color: #374151 !important;
+  color: #f9fafb !important;
+}
+
+.dark body > div[class*="react-select"] .react-select__option--is-selected {
+  background-color: #1e40af !important;
+  color: #f9fafb !important;
+}
+
+/* Additional targeting for React Select portals */
+div[class*="MenuList"] {
+  background-color: white !important;
+  z-index: 99999 !important;
+}
+
+.dark div[class*="MenuList"] {
+  background-color: #1f2937 !important;
+  z-index: 99999 !important;
+}
+
+div[class*="Menu"] {
+  background-color: white !important;
+  border: 1px solid #e5e7eb !important;
+  z-index: 99999 !important;
+}
+
+.dark div[class*="Menu"] {
+  background-color: #1f2937 !important;
+  border: 1px solid #4b5563 !important;
+  z-index: 99999 !important;
+}
+
+/* Target react-select components more specifically */
+[class*="react-select__menu"] {
+  background-color: white !important;
+  border: 1px solid #e5e7eb !important;
+  z-index: 99999 !important;
+}
+
+.dark [class*="react-select__menu"] {
+  background-color: #1f2937 !important;
+  border: 1px solid #4b5563 !important;
+}
+
+[class*="react-select__menu-list"] {
+  background-color: white !important;
+}
+
+.dark [class*="react-select__menu-list"] {
+  background-color: #1f2937 !important;
+}
+
+[class*="react-select__option"] {
+  background-color: white !important;
+  color: #111827 !important;
+}
+
+.dark [class*="react-select__option"] {
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
+}
+
+[class*="react-select__option--is-focused"] {
+  background-color: #f3f4f6 !important;
+  color: #111827 !important;
+}
+
+.dark [class*="react-select__option--is-focused"] {
+  background-color: #374151 !important;
+  color: #f9fafb !important;
+}
+
+[class*="react-select__option--is-selected"] {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.dark [class*="react-select__option--is-selected"] {
+  background-color: #1e40af !important;
+  color: #f9fafb !important;
+}
+
+/* Dark mode class targeting */
+.react-select-container.dark-mode .react-select__menu {
+  background-color: #1f2937 !important;
+  border: 1px solid #4b5563 !important;
+}
+
+.react-select-container.dark-mode .react-select__menu-list {
+  background-color: #1f2937 !important;
+}
+
+.react-select-container.dark-mode .react-select__option {
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
+}
+
+.react-select-container.dark-mode .react-select__option--is-focused {
+  background-color: #374151 !important;
+  color: #f9fafb !important;
+}
+
+.react-select-container.dark-mode .react-select__option--is-selected {
+  background-color: #1e40af !important;
+  color: #f9fafb !important;
+}
+
+/* Portal targeting with dark mode class */
+body:has(.dark-mode) div[class*="react-select__menu"] {
+  background-color: #1f2937 !important;
+  border: 1px solid #4b5563 !important;
+}
+
+body:has(.dark-mode) div[class*="react-select__menu-list"] {
+  background-color: #1f2937 !important;
+}
+
+body:has(.dark-mode) div[class*="react-select__option"] {
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
+}
+
+body:has(.dark-mode) div[class*="react-select__option--is-focused"] {
+  background-color: #374151 !important;
+  color: #f9fafb !important;
+}
+
+body:has(.dark-mode) div[class*="react-select__option--is-selected"] {
+  background-color: #1e40af !important;
+  color: #f9fafb !important;
+}
+
+/* CSS Variables approach for better control */
+div[data-theme="dark"] [class*="react-select__menu"],
+[data-theme="dark"] [class*="react-select__menu"] {
+  background-color: var(--select-bg) !important;
+  border-color: var(--select-border) !important;
+}
+
+div[data-theme="dark"] [class*="react-select__menu-list"],
+[data-theme="dark"] [class*="react-select__menu-list"] {
+  background-color: var(--select-bg) !important;
+}
+
+div[data-theme="dark"] [class*="react-select__option"],
+[data-theme="dark"] [class*="react-select__option"] {
+  background-color: var(--select-bg) !important;
+  color: var(--select-text) !important;
+}
+
+div[data-theme="dark"] [class*="react-select__option--is-focused"],
+[data-theme="dark"] [class*="react-select__option--is-focused"] {
+  background-color: var(--select-hover) !important;
+  color: var(--select-text) !important;
+}
+
+div[data-theme="dark"] [class*="react-select__option--is-selected"],
+[data-theme="dark"] [class*="react-select__option--is-selected"] {
+  background-color: var(--select-selected) !important;
+  color: white !important;
+}
+
+/* Ensure all react-select menus have maximum z-index */
+div[class*="react-select__menu-portal"] {
+  z-index: 999999 !important;
+}
+
+div[class*="react-select__menu-portal"] > div {
+  z-index: 999999 !important;
+}
+
+/* Target any element that might contain react-select menu */
+body > div:last-child {
+  z-index: 999999 !important;
+}
+
+/* Specific targeting for menu portals */
+body > div[style*="z-index"] {
+  z-index: 999999 !important;
+}
+
+/* Override any existing z-index on react-select components */
+.react-select__menu,
+.react-select__menu-list,
+.react-select__menu-portal {
+  z-index: 999999 !important;
+}
+
+/* Additional safety net for all react-select related divs */
+div[class*="react-select"] {
+  z-index: 999999 !important;
+}
+
+/* Target the portal container specifically */
+body > div[class=""] {
+  z-index: 999999 !important;
+}
+
+/* Nuclear option - force all potential react-select containers to highest z-index */
+body > div:has([class*="react-select"]) {
+  z-index: 999999 !important;
+}
+
+/* Force z-index on any div that might be a portal */
+body > div[style*="position: absolute"],
+body > div[style*="position: fixed"] {
+  z-index: 999999 !important;
+}
+
+/* Specific override for react-select menu portals */
+[data-react-select-menu-portal="true"] {
+  z-index: 999999 !important;
+}
+
+/* Last resort - target any div with react-select classes */
+*[class*="react-select"] {
+  z-index: 999999 !important;
 }

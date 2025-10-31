@@ -1,29 +1,29 @@
 'use client';
 
-import { useState } from 'react';
-import { 
-  DollarSign, 
-  TrendingUp, 
-  Target, 
-  BarChart3, 
-  Award, 
-  Percent 
+import { useState, useEffect } from 'react';
+import {
+  DollarSign,
+  TrendingUp,
+  Target,
+  BarChart3,
+  Award,
+  Percent
 } from 'lucide-react';
 import { MainLayout } from '@/components/layout';
-import { 
-  KPIWidget, 
-  PerformanceChart, 
-  ActivityFeed, 
+import {
+  KPIWidget,
+  PerformanceChart,
+  ActivityFeed,
   AlertsWidget,
   Alert
 } from '@/components/features/dashboard';
 import { GuidedTour } from '@/components/features/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
 import { useOnboardingStore } from '@/stores/onboarding-store';
-import { 
-  mockPerformanceData, 
-  mockKPIData, 
-  mockRecentActivity, 
+import {
+  mockPerformanceData,
+  mockKPIData,
+  mockRecentActivity,
   mockAlerts,
   emptyStateData
 } from '@/mocks/data/dashboard';
@@ -31,7 +31,7 @@ import {
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const { hasCompletedOnboarding } = useOnboardingStore();
-  
+
   // For demo purposes, we'll show empty state for new users
   const [isNewUser] = useState(false);
   const [alerts, setAlerts] = useState<Alert[]>(mockAlerts);
@@ -48,7 +48,7 @@ export default function DashboardPage() {
   };
 
   const handleMarkAsRead = (alertId: string) => {
-    setAlerts(prev => prev.map(alert => 
+    setAlerts(prev => prev.map(alert =>
       alert.id === alertId ? { ...alert, isRead: true } : alert
     ));
   };
@@ -81,28 +81,28 @@ export default function DashboardPage() {
             icon={DollarSign}
             className="sm:col-span-2 lg:col-span-1"
           />
-          
+
           <KPIWidget
             title="30d ROI"
             value={`${data.kpiData.roi30d.current}%`}
             change={data.kpiData.roi30d.change}
             icon={TrendingUp}
           />
-          
+
           <KPIWidget
             title="Active Strategies"
             value={data.kpiData.activeStrategies.current}
             description={data.kpiData.activeStrategies.description}
             icon={Target}
           />
-          
+
           <KPIWidget
             title="Open Positions"
             value={data.kpiData.openPositions.current}
             description={data.kpiData.openPositions.description}
             icon={BarChart3}
           />
-          
+
           <KPIWidget
             title="Total Return"
             value={`$${data.kpiData.totalReturn.current.toLocaleString()}`}
@@ -133,7 +133,7 @@ export default function DashboardPage() {
           >
             <div className="mt-4">
               <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
-                <div 
+                <div
                   className="bg-success-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${data.kpiData.winRate.current}%` }}
                 />
@@ -148,11 +148,11 @@ export default function DashboardPage() {
 
         {/* Activity and Alerts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-          <ActivityFeed 
+          <ActivityFeed
             activities={data.recentActivity}
             maxItems={8}
           />
-          
+
           <AlertsWidget
             alerts={alerts}
             onDismiss={handleDismissAlert}
