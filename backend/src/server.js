@@ -122,8 +122,17 @@ connectDB();
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
-  console.log('❌ Unhandled Promise Rejection:', err.message);
-  // Close server & exit process
+  console.error('❌ Unhandled Promise Rejection:', err.message);
+  console.error('Stack:', err.stack);
+  
+  // In development, don't crash the server for debugging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔄 Server continuing in development mode...');
+    return;
+  }
+  
+  // In production, gracefully close server
+  console.log('🔄 Shutting down server due to unhandled promise rejection...');
   server.close(() => {
     process.exit(1);
   });
@@ -131,7 +140,16 @@ process.on('unhandledRejection', (err, promise) => {
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
-  console.log('❌ Uncaught Exception:', err.message);
+  console.error('❌ Uncaught Exception:', err.message);
+  console.error('Stack:', err.stack);
+  
+  // In development, don't crash the server for debugging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔄 Server continuing in development mode...');
+    return;
+  }
+  
+  console.log('🔄 Shutting down server due to uncaught exception...');
   process.exit(1);
 });
 

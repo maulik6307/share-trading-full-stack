@@ -2,6 +2,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { validationResult } = require('express-validator');
+const emailService = require('../utils/emailService');
 
 // Helper function to send token response
 const sendTokenResponse = (user, statusCode, res) => {
@@ -91,6 +92,14 @@ exports.register = async (req, res, next) => {
       country
     });
 
+    // Send welcome email (don't block registration if email fails)
+    try {
+      await emailService.sendWelcomeEmail(user.email, user.name);
+    } catch (emailError) {
+      console.error('Welcome email failed:', emailError);
+      // Continue with registration even if email fails
+    }
+
     sendTokenResponse(user, 201, res);
   } catch (error) {
     console.error('Registration error:', error);
@@ -119,6 +128,14 @@ exports.login = async (req, res, next) => {
 
     const { identifier, password, rememberMe } = req.body;
 
+    // Validate input parameters
+    if (!identifier || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email/username and password are required'
+      });
+    }
+
     // Find user by credentials
     const user = await User.findByCredentials(identifier, password);
 
@@ -142,6 +159,15 @@ exports.login = async (req, res, next) => {
     sendTokenResponse(user, 200, res);
   } catch (error) {
     console.error('Login error:', error);
+    
+    // Handle specific bcrypt errors
+    if (error.message && error.message.includes('Illegal arguments')) {
+      console.error('BCrypt error - likely undefined password field');
+      return res.status(500).json({
+        success: false,
+        message: 'Authentication system error. Please try again.'
+      });
+    }
     
     if (error.message === 'Invalid credentials' || error.message.includes('locked')) {
       return res.status(401).json({
@@ -368,21 +394,39 @@ exports.forgotPassword = async (req, res, next) => {
 
     await user.save({ validateBeforeSave: false });
 
-    // Create reset url
-    const resetUrl = `${req.protocol}://${req.get('host')}/reset-password/${resetToken}`;
+    // Create reset url - use frontend URL
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
 
-    // For now, just return the reset token (in production, send email)
-    res.status(200).json({
-      success: true,
-      message: 'Password reset token generated',
-      resetToken: process.env.NODE_ENV === 'development' ? resetToken : undefined,
-      resetUrl: process.env.NODE_ENV === 'development' ? resetUrl : undefined
-    });
+    try {
+      // Send password reset email
+      await emailService.sendPasswordResetEmail(user.email, resetToken, resetUrl);
+
+      res.status(200).json({
+        success: true,
+        message: 'Password reset email sent successfully',
+        // Only include token in development for testing
+        resetToken: process.env.NODE_ENV === 'development' ? resetToken : undefined,
+        resetUrl: process.env.NODE_ENV === 'development' ? resetUrl : undefined
+      });
+    } catch (emailError) {
+      console.error('Email sending failed:', emailError);
+      
+      // Reset the password reset fields since email failed
+      user.passwordResetToken = undefined;
+      user.passwordResetExpires = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      return res.status(500).json({
+        success: false,
+        message: 'Email could not be sent. Please try again later.'
+      });
+    }
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({
       success: false,
-      message: 'Email could not be sent'
+      message: 'Server error processing password reset request'
     });
   }
 };

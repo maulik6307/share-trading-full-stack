@@ -181,11 +181,18 @@ userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
 
   try {
+    // Validate password exists and is a string
+    if (!this.password || typeof this.password !== 'string') {
+      return next(new Error('Password must be a valid string'));
+    }
+
     // Hash password with cost of 12
-    const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_ROUNDS) || 12);
+    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+    const salt = await bcrypt.genSalt(saltRounds);
     this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error) {
+    console.error('Password hashing error:', error);
     next(error);
   }
 });
@@ -200,10 +207,22 @@ userSchema.pre('save', function(next) {
 
 // Instance method to check password
 userSchema.methods.matchPassword = async function(enteredPassword) {
-  if (!enteredPassword || !this.password) {
+  try {
+    if (!enteredPassword || typeof enteredPassword !== 'string') {
+      console.error('Invalid entered password:', enteredPassword);
+      return false;
+    }
+    
+    if (!this.password || typeof this.password !== 'string') {
+      console.error('Invalid stored password for user:', this.email);
+      return false;
+    }
+    
+    return await bcrypt.compare(enteredPassword, this.password);
+  } catch (error) {
+    console.error('Password comparison error:', error);
     return false;
   }
-  return await bcrypt.compare(enteredPassword, this.password);
 };
 
 // Instance method to generate JWT token
@@ -258,41 +277,52 @@ userSchema.methods.resetLoginAttempts = function() {
 
 // Static method to find user by credentials
 userSchema.statics.findByCredentials = async function(identifier, password) {
-  if (!identifier || !password) {
-    throw new Error('Invalid credentials');
+  try {
+    if (!identifier || !password || typeof identifier !== 'string' || typeof password !== 'string') {
+      throw new Error('Invalid credentials');
+    }
+
+    // Find user by email or username
+    const user = await this.findOne({
+      $or: [
+        { email: identifier.toLowerCase() },
+        { username: identifier }
+      ],
+      isActive: true
+    }).select('+password');
+
+    if (!user) {
+      throw new Error('Invalid credentials');
+    }
+
+    // Verify password field exists
+    if (!user.password) {
+      console.error('User found but password field is missing:', user.email);
+      throw new Error('Invalid credentials');
+    }
+
+    // Check if account is locked
+    if (user.isLocked) {
+      throw new Error('Account is temporarily locked due to too many failed login attempts');
+    }
+
+    // Check password
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      await user.incLoginAttempts();
+      throw new Error('Invalid credentials');
+    }
+
+    // Reset login attempts on successful login
+    if (user.loginAttempts > 0) {
+      await user.resetLoginAttempts();
+    }
+
+    return user;
+  } catch (error) {
+    console.error('findByCredentials error:', error.message);
+    throw error;
   }
-
-  // Find user by email or username
-  const user = await this.findOne({
-    $or: [
-      { email: identifier.toLowerCase() },
-      { username: identifier }
-    ],
-    isActive: true
-  }).select('+password');
-
-  if (!user) {
-    throw new Error('Invalid credentials');
-  }
-
-  // Check if account is locked
-  if (user.isLocked) {
-    throw new Error('Account is temporarily locked due to too many failed login attempts');
-  }
-
-  // Check password
-  const isMatch = await user.matchPassword(password);
-  if (!isMatch) {
-    await user.incLoginAttempts();
-    throw new Error('Invalid credentials');
-  }
-
-  // Reset login attempts on successful login
-  if (user.loginAttempts > 0) {
-    await user.resetLoginAttempts();
-  }
-
-  return user;
 };
 
 module.exports = mongoose.model('User', userSchema);
