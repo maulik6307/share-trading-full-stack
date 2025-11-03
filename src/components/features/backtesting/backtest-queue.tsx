@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Clock, 
   Play, 
-  Pause, 
+  // Pause, // Unused
   Square, 
   Trash2, 
   Filter,
@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { BacktestProgress } from './backtest-progress';
-import { Backtest, BacktestStatus } from '@/types/trading';
+import { Backtest } from '@/lib/api/backtesting';
 import { cn } from '@/lib/utils';
 
 interface BacktestQueueProps {
@@ -27,7 +27,7 @@ interface BacktestQueueProps {
   className?: string;
 }
 
-type StatusFilter = 'all' | BacktestStatus;
+type StatusFilter = 'all' | Backtest['status'];
 
 export function BacktestQueue({
   backtests,
@@ -53,7 +53,7 @@ export function BacktestQueue({
     filtered.sort((a, b) => {
       if (a.status === 'RUNNING' && b.status !== 'RUNNING') return -1;
       if (b.status === 'RUNNING' && a.status !== 'RUNNING') return 1;
-      return b.createdAt.getTime() - a.createdAt.getTime();
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
     return filtered;
@@ -77,7 +77,7 @@ export function BacktestQueue({
     return counts;
   }, [backtests]);
 
-  const getStatusIcon = (status: BacktestStatus) => {
+  const getStatusIcon = (status: Backtest['status']) => {
     switch (status) {
       case 'PENDING':
         return <Clock className="h-4 w-4" />;
@@ -94,7 +94,7 @@ export function BacktestQueue({
     }
   };
 
-  const getStatusColor = (status: BacktestStatus) => {
+  const getStatusColor = (status: Backtest['status']) => {
     switch (status) {
       case 'PENDING':
         return 'text-neutral-600';
@@ -111,7 +111,7 @@ export function BacktestQueue({
     }
   };
 
-  const handleBulkAction = (action: 'cancel' | 'delete', status?: BacktestStatus) => {
+  const handleBulkAction = (action: 'cancel' | 'delete', status?: Backtest['status']) => {
     const targetBacktests = status 
       ? backtests.filter(b => b.status === status)
       : filteredBacktests;
@@ -119,11 +119,11 @@ export function BacktestQueue({
     if (action === 'cancel' && onCancel) {
       targetBacktests
         .filter(b => b.status === 'RUNNING' || b.status === 'PENDING')
-        .forEach(b => onCancel(b.id));
+        .forEach(b => onCancel(b._id));
     } else if (action === 'delete' && onDelete) {
       targetBacktests
         .filter(b => b.status === 'COMPLETED' || b.status === 'FAILED' || b.status === 'CANCELLED')
-        .forEach(b => onDelete(b.id));
+        .forEach(b => onDelete(b._id));
     }
   };
 
@@ -168,8 +168,8 @@ export function BacktestQueue({
           >
             <div className="flex items-center space-x-2 mb-1">
               {status !== 'all' && (
-                <span className={getStatusColor(status as BacktestStatus)}>
-                  {getStatusIcon(status as BacktestStatus)}
+                <span className={getStatusColor(status as Backtest['status'])}>
+                  {getStatusIcon(status as Backtest['status'])}
                 </span>
               )}
               <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
@@ -241,7 +241,7 @@ export function BacktestQueue({
           <AnimatePresence>
             {filteredBacktests.map((backtest) => (
               <motion.div
-                key={backtest.id}
+                key={backtest._id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -259,7 +259,7 @@ export function BacktestQueue({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onRetry(backtest.id)}
+                      onClick={() => onRetry(backtest._id)}
                       className="flex items-center space-x-1"
                     >
                       <Play className="h-3 w-3" />
@@ -271,7 +271,7 @@ export function BacktestQueue({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onDelete(backtest.id)}
+                      onClick={() => onDelete(backtest._id)}
                       className="flex items-center space-x-1 text-danger-600 hover:text-danger-700"
                     >
                       <Trash2 className="h-3 w-3" />

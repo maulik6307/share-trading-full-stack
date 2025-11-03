@@ -12,22 +12,24 @@ import {
   Info
 } from 'lucide-react';
 import { Modal, Button, Input } from '@/components/ui';
-import { Strategy } from '@/types/trading';
+import { Strategy } from '@/lib/api/strategies';
 import { cn } from '@/lib/utils';
 
-interface BacktestConfig {
+interface BacktestConfigForm {
   name: string;
+  description?: string;
   startDate: string;
   endDate: string;
   initialCapital: number;
   commission: number;
   slippage: number;
+  tags?: string[];
 }
 
 interface BacktestConfigModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (config: BacktestConfig) => void;
+  onSubmit: (config: BacktestConfigForm) => Promise<void>;
   strategy?: Strategy | null;
   className?: string;
 }
@@ -39,13 +41,15 @@ export function BacktestConfigModal({
   strategy,
   className,
 }: BacktestConfigModalProps) {
-  const [config, setConfig] = useState<BacktestConfig>({
+  const [config, setConfig] = useState<BacktestConfigForm>({
     name: '',
+    description: '',
     startDate: '',
     endDate: '',
     initialCapital: 100000,
     commission: 0.1,
     slippage: 0.05,
+    tags: [],
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -141,9 +145,7 @@ export function BacktestConfigModal({
     setIsSubmitting(true);
     
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      onSubmit(config);
+      await onSubmit(config);
       handleClose();
     } catch (error) {
       console.error('Error submitting backtest:', error);
@@ -155,18 +157,20 @@ export function BacktestConfigModal({
   const handleClose = () => {
     setConfig({
       name: '',
+      description: '',
       startDate: '',
       endDate: '',
       initialCapital: 100000,
       commission: 0.1,
       slippage: 0.05,
+      tags: [],
     });
     setErrors({});
     setIsSubmitting(false);
     onClose();
   };
 
-  const handleInputChange = (field: keyof BacktestConfig, value: string | number) => {
+  const handleInputChange = (field: keyof BacktestConfigForm, value: string | number) => {
     setConfig(prev => ({ ...prev, [field]: value }));
     
     // Clear error when user starts typing
@@ -234,6 +238,23 @@ export function BacktestConfigModal({
 
         {/* Configuration Form */}
         <div className="space-y-6">
+          {/* Strategy Selection (when no strategy is pre-selected) */}
+          {!strategy && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                    No Strategy Selected
+                  </h4>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                    Please select a strategy from the Quick Start section or create a new strategy first.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Basic Settings */}
           <div>
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4 flex items-center">
@@ -387,7 +408,7 @@ export function BacktestConfigModal({
             </Button>
             <Button 
               onClick={handleSubmit}
-              disabled={isSubmitting || !strategy}
+              disabled={isSubmitting || !strategy || !config.name.trim() || !config.startDate || !config.endDate}
               className="flex items-center space-x-2"
             >
               {isSubmitting ? (

@@ -7,64 +7,41 @@ import { MainLayout } from '@/components/layout';
 import { Button } from '@/components/ui';
 import { BacktestConfigModal, BacktestQueue } from '@/components/features/backtesting';
 import { useAuthStore } from '@/stores/auth-store';
-import { mockBacktests } from '@/mocks/data/backtests';
-import { mockStrategies } from '@/mocks/data/strategies';
-import { Backtest, Strategy } from '@/types/trading';
-
-interface BacktestConfig {
-  name: string;
-  startDate: string;
-  endDate: string;
-  initialCapital: number;
-  commission: number;
-  slippage: number;
-}
+import { useBacktesting } from '@/hooks/use-backtesting';
+import { useStrategies } from '@/hooks/use-strategies';
+import { BacktestConfig } from '@/lib/api/backtesting';
+import { Strategy } from '@/lib/api/strategies';
 
 export default function BacktestingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuthStore();
-  const [backtests, setBacktests] = useState<Backtest[]>([]);
-  const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
 
-  // Load backtests and strategies
-  useEffect(() => {
-    // Load from localStorage and combine with mock data
-    const savedBacktests = localStorage.getItem('user-backtests');
-    const userBacktests = savedBacktests ? JSON.parse(savedBacktests) : [];
-    
-    // Convert date strings back to Date objects
-    const parsedUserBacktests = userBacktests.map((backtest: any) => ({
-      ...backtest,
-      startDate: new Date(backtest.startDate),
-      endDate: new Date(backtest.endDate),
-      createdAt: new Date(backtest.createdAt),
-      startedAt: backtest.startedAt ? new Date(backtest.startedAt) : undefined,
-      completedAt: backtest.completedAt ? new Date(backtest.completedAt) : undefined,
-    }));
+  // Use custom hooks for data management
+  const {
+    backtests,
+    // statusCounts, // Unused for now
+    loading: backtestsLoading,
+    error: backtestsError,
+    createBacktest,
+    deleteBacktest,
+    cancelBacktest,
+    retryBacktest,
+  } = useBacktesting();
 
-    setBacktests([...parsedUserBacktests, ...mockBacktests]);
-
-    // Load strategies (both user and mock)
-    const savedStrategies = localStorage.getItem('user-strategies');
-    const userStrategies = savedStrategies ? JSON.parse(savedStrategies) : [];
-    const parsedUserStrategies = userStrategies.map((strategy: any) => ({
-      ...strategy,
-      createdAt: new Date(strategy.createdAt),
-      updatedAt: new Date(strategy.updatedAt),
-      deployedAt: strategy.deployedAt ? new Date(strategy.deployedAt) : undefined,
-    }));
-
-    setStrategies([...parsedUserStrategies, ...mockStrategies]);
-  }, []);
+  const {
+    strategies,
+    loading: strategiesLoading,
+    error: strategiesError,
+  } = useStrategies();
 
   // Check for strategy ID in URL params to auto-open config modal
   useEffect(() => {
     const strategyId = searchParams.get('strategyId');
-    if (strategyId) {
-      const strategy = strategies.find(s => s.id === strategyId);
+    if (strategyId && strategies.length > 0) {
+      const strategy = strategies.find(s => s._id === strategyId);
       if (strategy) {
         setSelectedStrategy(strategy);
         setShowConfigModal(true);
@@ -84,115 +61,36 @@ export default function BacktestingPage() {
     setShowConfigModal(true);
   };
 
-  const handleSubmitBacktest = (config: BacktestConfig) => {
+  const handleSubmitBacktest = async (config: Omit<BacktestConfig, 'strategyId'>) => {
     if (!selectedStrategy) return;
 
-    const newBacktest: Backtest = {
-      id: `backtest-${Date.now()}`,
-      strategyId: selectedStrategy.id,
-      name: config.name,
-      status: 'PENDING',
-      startDate: new Date(config.startDate),
-      endDate: new Date(config.endDate),
-      initialCapital: config.initialCapital,
-      commission: config.commission,
-      slippage: config.slippage,
-      createdAt: new Date(),
-      progress: 0,
+    const backtestConfig: BacktestConfig = {
+      ...config,
+      strategyId: selectedStrategy._id,
     };
 
-    // Save to localStorage
-    const savedBacktests = localStorage.getItem('user-backtests');
-    const userBacktests = savedBacktests ? JSON.parse(savedBacktests) : [];
-    userBacktests.unshift(newBacktest);
-    localStorage.setItem('user-backtests', JSON.stringify(userBacktests));
-
-    // Update state
-    setBacktests(prev => [newBacktest, ...prev]);
-
-    // Simulate backtest execution
-    simulateBacktestExecution(newBacktest.id);
-  };
-
-  const simulateBacktestExecution = (backtestId: string) => {
-    // Start the backtest
-    setTimeout(() => {
-      updateBacktestStatus(backtestId, 'RUNNING', { startedAt: new Date() });
-      
-      // Simulate progress updates
-      let progress = 0;
-      const progressInterval = setInterval(() => {
-        progress += Math.random() * 15 + 5; // Random progress between 5-20%
-        
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(progressInterval);
-          
-          // Complete the backtest
-          setTimeout(() => {
-            updateBacktestStatus(backtestId, 'COMPLETED', { 
-              completedAt: new Date(),
-              progress: 100 
-            });
-          }, 1000);
-        } else {
-          updateBacktestStatus(backtestId, 'RUNNING', { progress });
-        }
-      }, 2000); // Update every 2 seconds
-    }, 1000); // Start after 1 second
-  };
-
-  const updateBacktestStatus = (backtestId: string, status: Backtest['status'], updates: Partial<Backtest>) => {
-    setBacktests(prev => prev.map(backtest => 
-      backtest.id === backtestId 
-        ? { ...backtest, status, ...updates }
-        : backtest
-    ));
-
-    // Update localStorage
-    const savedBacktests = localStorage.getItem('user-backtests');
-    if (savedBacktests) {
-      const userBacktests = JSON.parse(savedBacktests);
-      const updatedBacktests = userBacktests.map((backtest: Backtest) =>
-        backtest.id === backtestId 
-          ? { ...backtest, status, ...updates }
-          : backtest
-      );
-      localStorage.setItem('user-backtests', JSON.stringify(updatedBacktests));
+    const result = await createBacktest(backtestConfig);
+    if (result) {
+      setShowConfigModal(false);
+      setSelectedStrategy(null);
     }
   };
 
-  const handleCancelBacktest = (backtestId: string) => {
-    updateBacktestStatus(backtestId, 'CANCELLED', { progress: 0 });
+  const handleCancelBacktest = async (backtestId: string) => {
+    await cancelBacktest(backtestId);
   };
 
-  const handleDeleteBacktest = (backtestId: string) => {
-    setBacktests(prev => prev.filter(b => b.id !== backtestId));
-    
-    // Update localStorage
-    const savedBacktests = localStorage.getItem('user-backtests');
-    if (savedBacktests) {
-      const userBacktests = JSON.parse(savedBacktests);
-      const filteredBacktests = userBacktests.filter((b: Backtest) => b.id !== backtestId);
-      localStorage.setItem('user-backtests', JSON.stringify(filteredBacktests));
-    }
+  const handleDeleteBacktest = async (backtestId: string) => {
+    await deleteBacktest(backtestId);
   };
 
   const handleViewResults = (backtestId: string) => {
-    // Navigate to backtest results page (to be implemented in next task)
+    // Navigate to backtest results page
     router.push(`/backtesting/results/${backtestId}`);
   };
 
-  const handleRetryBacktest = (backtestId: string) => {
-    updateBacktestStatus(backtestId, 'PENDING', { 
-      progress: 0,
-      errorMessage: undefined,
-      startedAt: undefined,
-      completedAt: undefined 
-    });
-    
-    // Restart simulation
-    setTimeout(() => simulateBacktestExecution(backtestId), 1000);
+  const handleRetryBacktest = async (backtestId: string) => {
+    await retryBacktest(backtestId);
   };
 
   if (!user) {
@@ -223,7 +121,7 @@ export default function BacktestingPage() {
         </div>
 
         {/* Quick Actions */}
-        {strategies.length > 0 && (
+        {!strategiesLoading && strategies.length > 0 && (
           <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
               Quick Start
@@ -231,7 +129,7 @@ export default function BacktestingPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {strategies.slice(0, 6).map((strategy) => (
                 <button
-                  key={strategy.id}
+                  key={strategy._id}
                   onClick={() => handleCreateBacktest(strategy)}
                   className="p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:border-primary-300 dark:hover:border-primary-600 transition-colors text-left"
                 >
@@ -260,6 +158,53 @@ export default function BacktestingPage() {
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* No Strategies Available */}
+        {!strategiesLoading && strategies.length === 0 && !strategiesError && (
+          <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="h-8 w-8 text-neutral-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
+                No Strategies Available
+              </h3>
+              <p className="text-neutral-600 dark:text-neutral-400 mb-4">
+                Create your first strategy to start backtesting
+              </p>
+              <Button 
+                onClick={() => router.push('/strategies')}
+                className="flex items-center space-x-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Create Strategy</span>
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {(backtestsLoading || strategiesLoading) && (
+          <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/4"></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="h-20 bg-neutral-200 dark:bg-neutral-700 rounded"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error States */}
+        {(backtestsError || strategiesError) && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <p className="text-red-600 dark:text-red-400">
+              {backtestsError || strategiesError}
+            </p>
           </div>
         )}
 

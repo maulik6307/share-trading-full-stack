@@ -412,7 +412,7 @@ export function StrategyBuilder({
                       </h4>
                     </div>
                     <p className="text-sm text-warning-700 dark:text-warning-300">
-                      This code is from the template "{strategyTemplate.name}". To modify the code, create a custom code-based strategy.
+                      This code is from the template &quot;{strategyTemplate.name}&quot;. To modify the code, create a custom code-based strategy.
                     </p>
                   </div>
                   <CodeEditor

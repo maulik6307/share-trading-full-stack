@@ -388,7 +388,7 @@ export function SplitAuthScreen({ isOpen, onClose, onSuccess, initialMode = 'sig
 
                 <div className="text-center">
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {mode === 'signin' ? "Don't have an account? " : 'Have an account? '}
+                    {mode === 'signin' ? "Don&apos;t have an account? " : 'Have an account? '}
                   </span>
                   <button
                     type="button"

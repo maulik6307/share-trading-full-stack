@@ -291,7 +291,9 @@ strategySchema.statics.getByUser = function (userId, options = {}) {
         includeArchived = false
     } = options;
 
-    const query = { userId };
+    // Convert userId to ObjectId if it's a string
+    const userObjectId = typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId;
+    const query = { userId: userObjectId };
 
     if (!includeArchived) {
         query.isArchived = false;

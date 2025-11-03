@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Play, 
-  Pause, 
+  // Pause, // Unused
   Square, 
   Clock, 
   CheckCircle, 
@@ -13,7 +13,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui';
-import { Backtest, BacktestStatus } from '@/types/trading';
+import { Backtest } from '@/lib/api/backtesting';
 import { cn } from '@/lib/utils';
 
 interface BacktestProgressProps {
@@ -35,7 +35,7 @@ export function BacktestProgress({
   useEffect(() => {
     if (backtest.status === 'RUNNING' && backtest.startedAt) {
       const interval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - backtest.startedAt!.getTime()) / 1000);
+        const elapsed = Math.floor((Date.now() - new Date(backtest.startedAt!).getTime()) / 1000);
         setElapsedTime(elapsed);
       }, 1000);
 
@@ -100,7 +100,7 @@ export function BacktestProgress({
 
   const formatDuration = () => {
     if (backtest.startedAt && backtest.completedAt) {
-      const duration = Math.floor((backtest.completedAt.getTime() - backtest.startedAt.getTime()) / 1000);
+      const duration = Math.floor((new Date(backtest.completedAt).getTime() - new Date(backtest.startedAt).getTime()) / 1000);
       return formatElapsedTime(duration);
     }
     if (backtest.status === 'RUNNING' && backtest.startedAt) {
@@ -154,7 +154,7 @@ export function BacktestProgress({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onCancel(backtest.id)}
+                onClick={() => onCancel(backtest._id)}
                 className="flex items-center space-x-1"
               >
                 <Square className="h-3 w-3" />
@@ -165,7 +165,7 @@ export function BacktestProgress({
             {backtest.status === 'COMPLETED' && onViewResults && (
               <Button
                 size="sm"
-                onClick={() => onViewResults(backtest.id)}
+                onClick={() => onViewResults(backtest._id)}
                 className="flex items-center space-x-1"
               >
                 <BarChart3 className="h-3 w-3" />
@@ -203,7 +203,7 @@ export function BacktestProgress({
           <div>
             <span className="text-neutral-500 dark:text-neutral-400">Period</span>
             <div className="font-medium text-neutral-900 dark:text-white">
-              {backtest.startDate.toLocaleDateString()} - {backtest.endDate.toLocaleDateString()}
+              {new Date(backtest.startDate).toLocaleDateString()} - {new Date(backtest.endDate).toLocaleDateString()}
             </div>
           </div>
           
@@ -253,11 +253,11 @@ export function BacktestProgress({
         {/* Timestamps */}
         <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400 pt-2 border-t border-neutral-200 dark:border-neutral-700">
           <span>
-            Created: {backtest.createdAt.toLocaleString()}
+            Created: {new Date(backtest.createdAt).toLocaleString()}
           </span>
           {backtest.completedAt && (
             <span>
-              Completed: {backtest.completedAt.toLocaleString()}
+              Completed: {new Date(backtest.completedAt).toLocaleString()}
             </span>
           )}
         </div>

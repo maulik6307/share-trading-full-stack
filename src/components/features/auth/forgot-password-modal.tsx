@@ -78,7 +78,7 @@ export function ForgotPasswordModal({ isOpen, onClose, onBackToLogin }: ForgotPa
                   Forgot Password?
                 </h2>
                 <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  No worries! Enter your email address and we'll send you a link to reset your password.
+                  No worries! Enter your email address and we&apos;ll send you a link to reset your password.
                 </p>
               </div>
 
@@ -142,13 +142,13 @@ export function ForgotPasswordModal({ isOpen, onClose, onBackToLogin }: ForgotPa
                   Check Your Email
                 </h2>
                 <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  We've sent a password reset link to
+                  We&apos;ve sent a password reset link to
                 </p>
                 <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">
                   {email}
                 </p>
                 <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                  Didn't receive the email? Check your spam folder or try again.
+                  Didn&apos;t receive the email? Check your spam folder or try again.
                 </p>
               </div>
 
