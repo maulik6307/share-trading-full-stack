@@ -11,6 +11,7 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
+const dashboardRoutes = require('./routes/dashboard');
 const tradingRoutes = require('./routes/trading');
 const strategyRoutes = require('./routes/strategy');
 const backtestRoutes = require('./routes/backtest');
@@ -83,6 +84,7 @@ const apiVersion = process.env.API_VERSION || 'v1';
 
 app.use(`${apiPrefix}/${apiVersion}/auth`, authRoutes);
 app.use(`${apiPrefix}/${apiVersion}/users`, userRoutes);
+app.use(`${apiPrefix}/${apiVersion}/dashboard`, dashboardRoutes);
 app.use(`${apiPrefix}/${apiVersion}/trading`, tradingRoutes);
 app.use(`${apiPrefix}/${apiVersion}/strategies`, strategyRoutes);
 app.use(`${apiPrefix}/${apiVersion}/backtests`, backtestRoutes);

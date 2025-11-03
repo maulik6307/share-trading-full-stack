@@ -6,13 +6,16 @@ import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 export interface Alert {
-  id: string;
+  _id?: string; // API format
+  id?: string; // Legacy format
   type: 'info' | 'warning' | 'error' | 'success';
   title: string;
   message: string;
-  timestamp: Date;
+  timestamp: Date | string;
   isRead?: boolean;
-  actionable?: boolean;
+  isActionable?: boolean;
+  actionable?: boolean; // Legacy format
+  symbol?: string;
   metadata?: {
     strategyId?: string;
     symbol?: string;
@@ -66,9 +69,10 @@ export function AlertsWidget({
     }
   };
 
-  const formatTimestamp = (timestamp: Date) => {
+  const formatTimestamp = (timestamp: Date | string) => {
+    const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
     const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - timestamp.getTime()) / (1000 * 60));
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
     
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
@@ -76,7 +80,7 @@ export function AlertsWidget({
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h ago`;
     
-    return timestamp.toLocaleDateString();
+    return date.toLocaleDateString();
   };
 
   if (alerts.length === 0) {
@@ -134,7 +138,7 @@ export function AlertsWidget({
 
           return (
             <div
-              key={alert.id}
+              key={alert._id || alert.id}
               className={cn(
                 'p-4 rounded-lg border transition-colors',
                 alert.isRead
@@ -163,7 +167,7 @@ export function AlertsWidget({
                       </span>
                       {onDismiss && (
                         <button
-                          onClick={() => onDismiss(alert.id)}
+                          onClick={() => onDismiss(alert._id || alert.id || '')}
                           className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
                         >
                           <X className="h-3 w-3" />
@@ -181,12 +185,12 @@ export function AlertsWidget({
                     {alert.message}
                   </p>
 
-                  {alert.metadata && (
+                  {(alert.symbol || alert.metadata) && (
                     <div className="flex items-center space-x-4 mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-                      {alert.metadata.symbol && (
-                        <span className="font-medium">{alert.metadata.symbol}</span>
+                      {(alert.symbol || alert.metadata?.symbol) && (
+                        <span className="font-medium">{alert.symbol || alert.metadata?.symbol}</span>
                       )}
-                      {alert.metadata.strategyId && (
+                      {alert.metadata?.strategyId && (
                         <span>Strategy: {alert.metadata.strategyId}</span>
                       )}
                     </div>
@@ -194,7 +198,7 @@ export function AlertsWidget({
 
                   {!alert.isRead && onMarkAsRead && (
                     <button
-                      onClick={() => onMarkAsRead(alert.id)}
+                      onClick={() => onMarkAsRead(alert._id || alert.id || '')}
                       className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 mt-2"
                     >
                       Mark as read

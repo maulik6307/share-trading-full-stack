@@ -1,61 +1,122 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import {
   DollarSign,
   TrendingUp,
   Target,
   BarChart3,
   Award,
-  Percent
+  Percent,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 import { MainLayout } from '@/components/layout';
 import {
   KPIWidget,
   PerformanceChart,
   ActivityFeed,
-  AlertsWidget,
-  Alert
+  AlertsWidget
 } from '@/components/features/dashboard';
 import { GuidedTour } from '@/components/features/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
 import { useOnboardingStore } from '@/stores/onboarding-store';
-import {
-  mockPerformanceData,
-  mockKPIData,
-  mockRecentActivity,
-  mockAlerts,
-  emptyStateData
-} from '@/mocks/data/dashboard';
+import { useDashboard } from '@/lib/hooks/use-dashboard';
+import { dashboardAPI } from '@/lib/api/dashboard';
+import { Button } from '@/components/ui/button';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const { hasCompletedOnboarding } = useOnboardingStore();
 
-  // For demo purposes, we'll show empty state for new users
-  const [isNewUser] = useState(false);
-  const [alerts, setAlerts] = useState<Alert[]>(mockAlerts);
+  // Fetch dashboard data with auto-refresh every 5 minutes
+  const {
+    data: dashboardData,
+    loading: dashboardLoading,
+    error: dashboardError,
+    refresh: refreshDashboard,
+    lastUpdated
+  } = useDashboard({
+    refreshInterval: 5 * 60 * 1000, // 5 minutes
+    performanceDays: 30,
+    activitiesLimit: 8,
+    alertsLimit: 10
+  });
 
-  const data = isNewUser ? emptyStateData : {
-    performanceData: mockPerformanceData,
-    kpiData: mockKPIData,
-    recentActivity: mockRecentActivity,
-    alerts: mockAlerts,
+  // Alert management functions using the dashboard data
+  const handleMarkAsRead = async (alertId: string) => {
+    try {
+      await dashboardAPI.markAlertAsRead(alertId);
+      // Refresh dashboard to get updated alerts
+      refreshDashboard();
+    } catch (error) {
+      console.error('Mark alert as read error:', error);
+    }
   };
 
-  const handleDismissAlert = (alertId: string) => {
-    setAlerts(prev => prev.filter(alert => alert.id !== alertId));
+  const handleDismissAlert = async (alertId: string) => {
+    try {
+      await dashboardAPI.dismissAlert(alertId);
+      // Refresh dashboard to get updated alerts
+      refreshDashboard();
+    } catch (error) {
+      console.error('Dismiss alert error:', error);
+    }
   };
 
-  const handleMarkAsRead = (alertId: string) => {
-    setAlerts(prev => prev.map(alert =>
-      alert.id === alertId ? { ...alert, isRead: true } : alert
-    ));
-  };
+  // Check if user is new (no portfolio data)
+  const isNewUser = !dashboardLoading && (!dashboardData || dashboardData.kpi.portfolioValue.current === 100000);
 
   if (!user) {
     return null;
   }
+
+  // Loading state
+  if (dashboardLoading) {
+    return (
+      <MainLayout user={user}>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-400">Loading your dashboard...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Error state
+  if (dashboardError) {
+    return (
+      <MainLayout user={user}>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <AlertCircle className="h-8 w-8 text-red-600 mx-auto mb-4" />
+            <p className="text-gray-900 dark:text-white font-semibold mb-2">Failed to load dashboard</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">{dashboardError}</p>
+            <Button onClick={refreshDashboard} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Use dashboard data or fallback to empty state
+  const data = dashboardData || {
+    kpi: {
+      portfolioValue: { current: 100000, change: { value: 0, period: 'today', isPositive: true } },
+      roi30d: { current: 0, change: { value: 0, period: 'vs last month', isPositive: true } },
+      activeStrategies: { current: 0, profitable: 0, description: 'No strategies yet' },
+      openPositions: { current: 0, profitable: 0, description: 'No positions' },
+      totalReturn: { current: 0, change: { value: 0, period: 'all time', isPositive: true } },
+      winRate: { current: 0, change: { value: 0, period: '30d avg', isPositive: true } }
+    },
+    performance: [{ date: new Date().toISOString().split('T')[0], value: 100000, benchmark: 100000 }],
+    activities: [],
+    alerts: []
+  };
 
   return (
     <MainLayout user={user}>
@@ -68,45 +129,59 @@ export default function DashboardPage() {
             </h1>
             <p className="text-neutral-600 dark:text-neutral-400">
               Here&apos;s your trading overview for today.
+              {lastUpdated && (
+                <span className="ml-2 text-sm">
+                  Last updated: {lastUpdated.toLocaleTimeString()}
+                </span>
+              )}
             </p>
           </div>
+          <Button
+            onClick={refreshDashboard}
+            variant="outline"
+            size="sm"
+            disabled={dashboardLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${dashboardLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
         {/* KPI Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-6">
           <KPIWidget
             title="Portfolio Value"
-            value={`$${data.kpiData.portfolioValue.current.toLocaleString()}`}
-            change={data.kpiData.portfolioValue.change}
+            value={`$${data.kpi.portfolioValue.current.toLocaleString()}`}
+            change={data.kpi.portfolioValue.change}
             icon={DollarSign}
             className="sm:col-span-2 lg:col-span-1"
           />
 
           <KPIWidget
             title="30d ROI"
-            value={`${data.kpiData.roi30d.current}%`}
-            change={data.kpiData.roi30d.change}
+            value={`${data.kpi.roi30d.current.toFixed(1)}%`}
+            change={data.kpi.roi30d.change}
             icon={TrendingUp}
           />
 
           <KPIWidget
             title="Active Strategies"
-            value={data.kpiData.activeStrategies.current}
-            description={data.kpiData.activeStrategies.description}
+            value={data.kpi.activeStrategies.current.toString()}
+            description={data.kpi.activeStrategies.description}
             icon={Target}
           />
 
           <KPIWidget
             title="Open Positions"
-            value={data.kpiData.openPositions.current}
-            description={data.kpiData.openPositions.description}
+            value={data.kpi.openPositions.current.toString()}
+            description={data.kpi.openPositions.description}
             icon={BarChart3}
           />
 
           <KPIWidget
             title="Total Return"
-            value={`$${data.kpiData.totalReturn.current.toLocaleString()}`}
-            change={data.kpiData.totalReturn.change}
+            value={`$${data.kpi.totalReturn.current.toLocaleString()}`}
+            change={data.kpi.totalReturn.change}
             icon={Award}
           />
         </div>
@@ -116,7 +191,7 @@ export default function DashboardPage() {
           {/* Performance Chart */}
           <div className="xl:col-span-2">
             <PerformanceChart
-              data={data.performanceData}
+              data={data.performance}
               title="Portfolio Performance (30 days)"
               showBenchmark={true}
               height={350}
@@ -126,8 +201,8 @@ export default function DashboardPage() {
           {/* Win Rate Widget */}
           <KPIWidget
             title="Win Rate"
-            value={`${data.kpiData.winRate.current}%`}
-            change={data.kpiData.winRate.change}
+            value={`${data.kpi.winRate.current.toFixed(1)}%`}
+            change={data.kpi.winRate.change}
             icon={Percent}
             className="h-fit"
           >
@@ -135,7 +210,7 @@ export default function DashboardPage() {
               <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
                 <div
                   className="bg-success-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${data.kpiData.winRate.current}%` }}
+                  style={{ width: `${Math.max(0, Math.min(100, data.kpi.winRate.current))}%` }}
                 />
               </div>
               <div className="flex justify-between text-xs text-neutral-500 dark:text-neutral-400 mt-2">
@@ -149,12 +224,12 @@ export default function DashboardPage() {
         {/* Activity and Alerts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
           <ActivityFeed
-            activities={data.recentActivity}
+            activities={data.activities}
             maxItems={8}
           />
 
           <AlertsWidget
-            alerts={alerts}
+            alerts={data.alerts}
             onDismiss={handleDismissAlert}
             onMarkAsRead={handleMarkAsRead}
           />

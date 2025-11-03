@@ -14,12 +14,15 @@ import {
 import { cn } from '@/lib/utils';
 
 export interface ActivityItem {
-  id: string;
-  type: 'trade' | 'strategy' | 'alert' | 'system';
+  _id?: string; // API format
+  id?: string; // Legacy format
+  type: 'trade' | 'strategy' | 'alert' | 'system' | 'deposit' | 'withdrawal';
   title: string;
   description: string;
-  timestamp: Date;
-  status?: 'success' | 'warning' | 'error' | 'info';
+  timestamp: Date | string;
+  status?: 'success' | 'warning' | 'error' | 'info' | 'pending';
+  symbol?: string;
+  amount?: number;
   metadata?: {
     amount?: number;
     symbol?: string;
@@ -41,22 +44,29 @@ export function ActivityFeed({
 }: ActivityFeedProps) {
   const displayedActivities = useMemo(() => {
     return activities
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .sort((a, b) => {
+        const aTime = typeof a.timestamp === 'string' ? new Date(a.timestamp).getTime() : a.timestamp.getTime();
+        const bTime = typeof b.timestamp === 'string' ? new Date(b.timestamp).getTime() : b.timestamp.getTime();
+        return bTime - aTime;
+      })
       .slice(0, maxItems);
   }, [activities, maxItems]);
 
   const getActivityIcon = (item: ActivityItem) => {
     switch (item.type) {
       case 'trade':
-        return item.metadata?.amount && item.metadata.amount > 0 
-          ? TrendingUp 
-          : TrendingDown;
+        const amount = item.amount || item.metadata?.amount;
+        return amount && amount > 0 ? TrendingUp : TrendingDown;
       case 'strategy':
         return item.status === 'success' ? Play : Pause;
       case 'alert':
         return AlertTriangle;
       case 'system':
         return CheckCircle;
+      case 'deposit':
+        return TrendingUp;
+      case 'withdrawal':
+        return TrendingDown;
       default:
         return Clock;
     }
@@ -75,9 +85,10 @@ export function ActivityFeed({
     }
   };
 
-  const formatTimestamp = (timestamp: Date) => {
+  const formatTimestamp = (timestamp: Date | string) => {
+    const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
     const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - timestamp.getTime()) / (1000 * 60));
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
     
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
@@ -88,7 +99,7 @@ export function ActivityFeed({
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d ago`;
     
-    return timestamp.toLocaleDateString();
+    return date.toLocaleDateString();
   };
 
   if (displayedActivities.length === 0) {
@@ -132,7 +143,7 @@ export function ActivityFeed({
           const colorClasses = getActivityColor(activity);
 
           return (
-            <div key={activity.id} className="flex items-start space-x-3">
+            <div key={activity._id || activity.id} className="flex items-start space-x-3">
               <div className={cn('w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0', colorClasses)}>
                 <Icon className="h-4 w-4" />
               </div>
@@ -151,18 +162,18 @@ export function ActivityFeed({
                   {activity.description}
                 </p>
 
-                {activity.metadata && (
+                {(activity.symbol || activity.amount || activity.metadata) && (
                   <div className="flex items-center space-x-4 mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-                    {activity.metadata.symbol && (
-                      <span className="font-medium">{activity.metadata.symbol}</span>
+                    {(activity.symbol || activity.metadata?.symbol) && (
+                      <span className="font-medium">{activity.symbol || activity.metadata?.symbol}</span>
                     )}
-                    {activity.metadata.amount && (
+                    {(activity.amount || activity.metadata?.amount) && (
                       <span className="flex items-center">
                         <DollarSign className="h-3 w-3 mr-1" />
-                        {Math.abs(activity.metadata.amount).toLocaleString()}
+                        {Math.abs(activity.amount || activity.metadata?.amount || 0).toLocaleString()}
                       </span>
                     )}
-                    {activity.metadata.strategyName && (
+                    {activity.metadata?.strategyName && (
                       <span>{activity.metadata.strategyName}</span>
                     )}
                   </div>
