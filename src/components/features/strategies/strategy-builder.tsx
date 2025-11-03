@@ -12,7 +12,8 @@ import {
   CheckCircle,
   Clock,
   ArrowLeft,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { Button, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
 import { ParameterBuilder } from './parameter-builder';
@@ -21,6 +22,7 @@ import { StrategyPreview } from './strategy-preview';
 import { StrategyVersionManager } from './strategy-version-manager';
 import { ParameterPresets } from './parameter-presets';
 import { StrategyImportExport } from './strategy-import-export';
+import { useStrategyTemplates } from '@/hooks/use-strategy-templates';
 import { Strategy, ParameterSchema } from '@/types/trading';
 import { cn } from '@/lib/utils';
 
@@ -51,60 +53,22 @@ export function StrategyBuilder({
   const [lastSaved, setLastSaved] = useState<Date>(strategy.updatedAt);
   const [showPreview, setShowPreview] = useState(false);
 
+  // Fetch templates to get parameter schema for template-based strategies
+  const { templates, loading: templatesLoading } = useStrategyTemplates({ limit: 100 });
+
+  // Find the template for this strategy
+  const strategyTemplate = useMemo(() => {
+    if (strategy.type === 'TEMPLATE' && strategy.templateId && templates.length > 0) {
+      return templates.find(template => template._id === strategy.templateId);
+    }
+    return null;
+  }, [strategy.type, strategy.templateId, templates]);
+
   // Generate parameter schema based on strategy type
   const parameterSchema = useMemo((): ParameterSchema[] => {
-    if (strategy.type === 'TEMPLATE' && strategy.templateId) {
-      // For template-based strategies, we would fetch the schema from the template
-      // For now, return a default schema
-      return [
-        {
-          key: 'symbol',
-          label: 'Trading Symbol',
-          type: 'select',
-          defaultValue: 'RELIANCE',
-          options: [
-            { label: 'Reliance', value: 'RELIANCE' },
-            { label: 'TCS', value: 'TCS' },
-            { label: 'HDFC Bank', value: 'HDFCBANK' },
-            { label: 'Infosys', value: 'INFY' },
-          ],
-          required: true,
-          description: 'The stock symbol to trade',
-        },
-        {
-          key: 'quantity',
-          label: 'Quantity',
-          type: 'number',
-          defaultValue: 100,
-          min: 1,
-          max: 10000,
-          step: 1,
-          required: true,
-          description: 'Number of shares to trade per signal',
-        },
-        {
-          key: 'stopLoss',
-          label: 'Stop Loss %',
-          type: 'number',
-          defaultValue: 2.0,
-          min: 0.1,
-          max: 10.0,
-          step: 0.1,
-          required: false,
-          description: 'Stop loss percentage (optional)',
-        },
-        {
-          key: 'takeProfit',
-          label: 'Take Profit %',
-          type: 'number',
-          defaultValue: 4.0,
-          min: 0.5,
-          max: 20.0,
-          step: 0.1,
-          required: false,
-          description: 'Take profit percentage (optional)',
-        },
-      ];
+    if (strategy.type === 'TEMPLATE' && strategyTemplate) {
+      // Use the parameter schema from the template
+      return strategyTemplate.parameterSchema;
     }
     
     // For custom strategies, return basic parameters
@@ -135,7 +99,7 @@ export function StrategyBuilder({
         description: 'Number of shares to trade per signal',
       },
     ];
-  }, [strategy.type, strategy.templateId]);
+  }, [strategy.type, strategyTemplate]);
 
   // Check if strategy is valid
   const isStrategyValid = useMemo(() => {
@@ -306,11 +270,14 @@ export function StrategyBuilder({
             <div className="flex items-center space-x-2">
               {localStrategy.type === 'CODE' ? (
                 <Code className="h-4 w-4 text-primary-500" />
+              ) : localStrategy.type === 'TEMPLATE' ? (
+                <FileText className="h-4 w-4 text-primary-500" />
               ) : (
                 <Settings className="h-4 w-4 text-primary-500" />
               )}
               <span className="text-sm text-neutral-900 dark:text-white">
-                {localStrategy.type === 'CODE' ? 'Code-based' : 'Visual Builder'}
+                {localStrategy.type === 'CODE' ? 'Code-based' : 
+                 localStrategy.type === 'TEMPLATE' ? 'Template-based' : 'Visual Builder'}
               </span>
             </div>
           </div>
@@ -340,6 +307,45 @@ export function StrategyBuilder({
           </div>
         </div>
       </div>
+
+      {/* Template Info (if template-based strategy) */}
+      {localStrategy.type === 'TEMPLATE' && (
+        <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4">
+          {templatesLoading ? (
+            <div className="flex items-center space-x-2">
+              <Loader2 className="h-4 w-4 animate-spin text-primary-600" />
+              <span className="text-sm text-primary-700 dark:text-primary-300">Loading template details...</span>
+            </div>
+          ) : strategyTemplate ? (
+            <div>
+              <div className="flex items-center space-x-2 mb-2">
+                <FileText className="h-5 w-5 text-primary-600" />
+                <h3 className="text-lg font-semibold text-primary-900 dark:text-primary-100">
+                  Based on: {strategyTemplate.name}
+                </h3>
+              </div>
+              <p className="text-sm text-primary-700 dark:text-primary-300 mb-3">
+                {strategyTemplate.description}
+              </p>
+              <div className="flex items-center space-x-4 text-xs text-primary-600 dark:text-primary-400">
+                <span>Category: {strategyTemplate.category}</span>
+                <span>•</span>
+                <span>Used {strategyTemplate.usageCount} times</span>
+                {strategyTemplate.rating > 0 && (
+                  <>
+                    <span>•</span>
+                    <span>Rating: {strategyTemplate.rating.toFixed(1)}/5</span>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-primary-700 dark:text-primary-300">
+              Template information not available
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Main Content */}
       <div className={cn('flex', showPreview && 'mr-0')}>
@@ -396,6 +402,26 @@ export function StrategyBuilder({
                   onChange={handleCodeChange}
                   onValidationChange={handleCodeValidation}
                 />
+              ) : localStrategy.type === 'TEMPLATE' && strategyTemplate ? (
+                <div className="space-y-4">
+                  <div className="bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 rounded-lg p-4">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <AlertTriangle className="h-5 w-5 text-warning-600" />
+                      <h4 className="text-sm font-medium text-warning-800 dark:text-warning-200">
+                        Template Code (Read-Only)
+                      </h4>
+                    </div>
+                    <p className="text-sm text-warning-700 dark:text-warning-300">
+                      This code is from the template "{strategyTemplate.name}". To modify the code, create a custom code-based strategy.
+                    </p>
+                  </div>
+                  <CodeEditor
+                    code={strategyTemplate.code || '// No code available for this template'}
+                    onChange={() => {}} // Read-only
+                    onValidationChange={() => {}}
+                    readOnly={true}
+                  />
+                </div>
               ) : (
                 <div className="text-center py-12">
                   <FileText className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
@@ -403,7 +429,10 @@ export function StrategyBuilder({
                     Code Editor Not Available
                   </h3>
                   <p className="text-neutral-600 dark:text-neutral-400">
-                    This strategy uses the visual builder. Switch to a code-based strategy to edit code.
+                    {localStrategy.type === 'VISUAL' 
+                      ? 'This strategy uses the visual builder. Switch to a code-based strategy to edit code.'
+                      : 'Code not available for this strategy type.'
+                    }
                   </p>
                 </div>
               )}

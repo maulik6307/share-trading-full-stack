@@ -39,12 +39,12 @@ export function Modal({
     if (isOpen) {
       // Store the currently focused element
       previousActiveElement.current = document.activeElement as HTMLElement;
-      
+
       // Focus the modal
       if (modalRef.current) {
         modalRef.current.focus();
       }
-      
+
       // Prevent body scroll
       document.body.style.overflow = 'hidden';
     } else {
@@ -52,7 +52,7 @@ export function Modal({
       if (previousActiveElement.current) {
         previousActiveElement.current.focus();
       }
-      
+
       // Restore body scroll
       document.body.style.overflow = 'unset';
     }
@@ -134,11 +134,11 @@ export function Modal({
           exit="exit"
         >
           {/* Backdrop */}
-          <motion.div 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+          <motion.div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             variants={backdropVariants}
           />
-          
+
           {/* Modal */}
           <motion.div
             ref={modalRef}
@@ -156,7 +156,7 @@ export function Modal({
           >
             {/* Header */}
             {(title || showCloseButton) && (
-              <motion.div 
+              <motion.div
                 className="flex items-center justify-between border-b border-neutral-200 p-6 dark:border-neutral-700"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -174,7 +174,7 @@ export function Modal({
                     </p>
                   )}
                 </div>
-                {showCloseButton && (
+                {/* {showCloseButton && (
                   <motion.button
                     onClick={onClose}
                     className={cn(
@@ -188,12 +188,12 @@ export function Modal({
                   >
                     <X size={20} />
                   </motion.button>
-                )}
+                )} */}
               </motion.div>
             )}
 
             {/* Content */}
-            <motion.div 
+            <motion.div
               className="p-6"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

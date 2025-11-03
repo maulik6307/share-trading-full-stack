@@ -2,25 +2,28 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Grid3X3, 
-  List, 
-  SortAsc, 
+import {
+  Plus,
+  Search,
+  Filter,
+  Grid3X3,
+  List,
+  SortAsc,
   SortDesc,
   Play,
   Pause,
   Square,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { MainLayout } from '@/components/layout';
 import { Button, Input } from '@/components/ui';
 import { StrategyCard } from '@/components/features/strategies/strategy-card';
 import { CreateStrategyModal } from '@/components/features/strategies/create-strategy-modal';
 import { useAuthStore } from '@/stores/auth-store';
-import { mockStrategies, mockStrategyTemplates } from '@/mocks/data/strategies';
+import { useStrategies, useStrategyStatusCounts, useStrategyActions } from '@/hooks/use-strategies';
+import { useStrategyTemplates, useTemplateActions } from '@/hooks/use-strategy-templates';
+import { Strategy as APIStrategy, StrategyTemplate as APIStrategyTemplate } from '@/lib/api/strategies';
 import { Strategy, StrategyTemplate } from '@/types/trading';
 import { cn } from '@/lib/utils';
 
@@ -33,31 +36,60 @@ export default function StrategiesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuthStore();
-  const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortField, setSortField] = useState<SortField>('updated');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [showFilters, setShowFilters] = useState(false);
 
-  // Load strategies from localStorage and mock data
+  // Debounce search query
   useEffect(() => {
-    const savedStrategies = localStorage.getItem('user-strategies');
-    const userStrategies = savedStrategies ? JSON.parse(savedStrategies) : [];
-    
-    // Convert date strings back to Date objects for user strategies
-    const parsedUserStrategies = userStrategies.map((strategy: any) => ({
-      ...strategy,
-      createdAt: new Date(strategy.createdAt),
-      updatedAt: new Date(strategy.updatedAt),
-      deployedAt: strategy.deployedAt ? new Date(strategy.deployedAt) : undefined,
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Memoize API options to prevent unnecessary re-renders
+  const apiOptions = useMemo(() => ({
+    search: debouncedSearchQuery || undefined,
+    status: statusFilter === 'all' ? undefined : statusFilter,
+    sortBy: sortField === 'updated' ? 'updatedAt' : sortField,
+    sortOrder,
+    limit: 50
+  }), [debouncedSearchQuery, statusFilter, sortField, sortOrder]);
+
+  // API hooks with stable options
+  const { strategies: apiStrategies, loading: strategiesLoading, refetch: refetchStrategies } = useStrategies(apiOptions);
+
+  const { counts: statusCounts, loading: countsLoading } = useStrategyStatusCounts();
+  const { templates, loading: templatesLoading } = useStrategyTemplates({ limit: 50 });
+  const strategyActions = useStrategyActions();
+  const templateActions = useTemplateActions();
+
+  // Convert API strategies to UI format
+  const strategies = useMemo(() => {
+    return apiStrategies.map((apiStrategy): Strategy => ({
+      id: apiStrategy._id,
+      name: apiStrategy.name,
+      description: apiStrategy.description,
+      type: apiStrategy.type,
+      status: apiStrategy.status,
+      parameters: apiStrategy.parameters,
+      code: apiStrategy.code,
+      templateId: apiStrategy.templateId,
+      isTemplate: false,
+      tags: apiStrategy.tags,
+      createdAt: new Date(apiStrategy.createdAt),
+      updatedAt: new Date(apiStrategy.updatedAt),
+      deployedAt: apiStrategy.deployedAt ? new Date(apiStrategy.deployedAt) : undefined,
+      performance: apiStrategy.performance,
     }));
-    
-    // Combine user strategies with mock strategies
-    setStrategies([...parsedUserStrategies, ...mockStrategies]);
-  }, []);
+  }, [apiStrategies]);
 
   // Check if create modal should be opened from URL parameter
   useEffect(() => {
@@ -69,147 +101,111 @@ export default function StrategiesPage() {
     }
   }, [searchParams, router]);
 
-  // Filter and sort strategies
-  const filteredStrategies = useMemo(() => {
-    const filtered = strategies.filter(strategy => {
-      const matchesSearch = strategy.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           strategy.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           strategy.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-      
-      const matchesStatus = statusFilter === 'all' || strategy.status === statusFilter;
-      
-      return matchesSearch && matchesStatus;
-    });
+  // Since filtering and sorting is handled by the API, we just use the strategies directly
+  const filteredStrategies = strategies;
 
-    // Sort strategies
-    filtered.sort((a, b) => {
-      let comparison = 0;
-      
-      switch (sortField) {
-        case 'name':
-          comparison = a.name.localeCompare(b.name);
+  const handleCreateFromTemplate = async (template: StrategyTemplate, name: string) => {
+    try {
+      // Convert UI template to API template
+      const apiTemplate = templates.find(t => t._id === template.id);
+      if (!apiTemplate) {
+        throw new Error('Template not found');
+      }
+
+      const strategy = await templateActions.createFromTemplate(apiTemplate._id, {
+        name,
+        description: `Strategy based on ${template.name}`,
+        parameters: template.defaultParameters,
+        tags: [template.category.toLowerCase().replace(' ', '-')]
+      });
+
+      // Refresh strategies list
+      refetchStrategies();
+
+      // Navigate to builder
+      router.push(`/strategies/builder?id=${strategy._id}`);
+    } catch (error) {
+      console.error('Failed to create strategy from template:', error);
+    }
+  };
+
+  const handleCreateFromScratch = async (type: 'CODE' | 'VISUAL', name: string, description: string) => {
+    try {
+      const strategy = await strategyActions.createStrategy({
+        name,
+        description: description || `Custom ${type.toLowerCase()} strategy`,
+        type,
+        parameters: {},
+        tags: ['custom']
+      });
+
+      // Refresh strategies list
+      refetchStrategies();
+
+      // Navigate to builder
+      router.push(`/strategies/builder?id=${strategy._id}`);
+    } catch (error) {
+      console.error('Failed to create strategy:', error);
+    }
+  };
+
+  const handleStrategyAction = async (action: string, strategy: Strategy) => {
+    try {
+      switch (action) {
+        case 'edit':
+          router.push(`/strategies/builder?id=${strategy.id}`);
           break;
-        case 'status':
-          comparison = a.status.localeCompare(b.status);
+        case 'clone':
+          await strategyActions.cloneStrategy(strategy.id, `${strategy.name} (Copy)`);
+          refetchStrategies();
           break;
-        case 'updated':
-          comparison = a.updatedAt.getTime() - b.updatedAt.getTime();
+        case 'delete':
+          await strategyActions.deleteStrategy(strategy.id);
+          refetchStrategies();
           break;
-        case 'performance':
-          const aPerf = a.performance?.totalReturnPercent || 0;
-          const bPerf = b.performance?.totalReturnPercent || 0;
-          comparison = aPerf - bPerf;
+        case 'deploy':
+          await strategyActions.deployStrategy(strategy.id);
+          refetchStrategies();
+          break;
+        case 'pause':
+          await strategyActions.pauseStrategy(strategy.id);
+          refetchStrategies();
+          break;
+        case 'stop':
+          await strategyActions.stopStrategy(strategy.id);
+          refetchStrategies();
           break;
       }
-      
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
-
-    return filtered;
-  }, [strategies, searchQuery, statusFilter, sortField, sortOrder]);
-
-  const handleCreateFromTemplate = (template: StrategyTemplate, name: string) => {
-    const newStrategy: Strategy = {
-      id: `strategy-${Date.now()}`,
-      name,
-      description: `Strategy based on ${template.name}`,
-      type: 'TEMPLATE',
-      status: 'DRAFT',
-      parameters: { ...template.defaultParameters },
-      templateId: template.id,
-      isTemplate: false,
-      tags: [template.category.toLowerCase().replace(' ', '-')],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    
-    // Save to localStorage for persistence
-    const savedStrategies = localStorage.getItem('user-strategies');
-    const userStrategies = savedStrategies ? JSON.parse(savedStrategies) : [];
-    userStrategies.unshift(newStrategy);
-    localStorage.setItem('user-strategies', JSON.stringify(userStrategies));
-    
-    setStrategies(prev => [newStrategy, ...prev]);
-    router.push(`/strategies/builder?id=${newStrategy.id}`);
-  };
-
-  const handleCreateFromScratch = (type: 'CODE' | 'VISUAL', name: string, description: string) => {
-    const newStrategy: Strategy = {
-      id: `strategy-${Date.now()}`,
-      name,
-      description: description || `Custom ${type.toLowerCase()} strategy`,
-      type,
-      status: 'DRAFT',
-      parameters: {},
-      isTemplate: false,
-      tags: ['custom'],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    
-    // Save to localStorage for persistence
-    const savedStrategies = localStorage.getItem('user-strategies');
-    const userStrategies = savedStrategies ? JSON.parse(savedStrategies) : [];
-    userStrategies.unshift(newStrategy);
-    localStorage.setItem('user-strategies', JSON.stringify(userStrategies));
-    
-    setStrategies(prev => [newStrategy, ...prev]);
-    router.push(`/strategies/builder?id=${newStrategy.id}`);
-  };
-
-  const handleStrategyAction = (action: string, strategy: Strategy) => {
-    switch (action) {
-      case 'edit':
-        router.push(`/strategies/builder?id=${strategy.id}`);
-        break;
-      case 'clone':
-        const clonedStrategy: Strategy = {
-          ...strategy,
-          id: `strategy-${Date.now()}`,
-          name: `${strategy.name} (Copy)`,
-          status: 'DRAFT',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          deployedAt: undefined,
-          performance: undefined,
-        };
-        
-        // Save to localStorage
-        const savedStrategies = localStorage.getItem('user-strategies');
-        const userStrategies = savedStrategies ? JSON.parse(savedStrategies) : [];
-        userStrategies.unshift(clonedStrategy);
-        localStorage.setItem('user-strategies', JSON.stringify(userStrategies));
-        
-        setStrategies(prev => [clonedStrategy, ...prev]);
-        break;
-      case 'delete':
-        setStrategies(prev => prev.filter(s => s.id !== strategy.id));
-        break;
-      case 'deploy':
-      case 'pause':
-      case 'stop':
-        setStrategies(prev => prev.map(s => 
-          s.id === strategy.id 
-            ? { 
-                ...s, 
-                status: action === 'deploy' ? 'ACTIVE' : action === 'pause' ? 'PAUSED' : 'STOPPED',
-                deployedAt: action === 'deploy' ? new Date() : s.deployedAt,
-                updatedAt: new Date()
-              }
-            : s
-        ));
-        break;
+    } catch (error) {
+      console.error(`Failed to ${action} strategy:`, error);
     }
   };
 
   const getStatusCount = (status: StatusFilter) => {
-    if (status === 'all') return strategies.length;
-    return strategies.filter(s => s.status === status).length;
+    if (status === 'all') return statusCounts.total;
+    return statusCounts[status] || 0;
   };
+
+  // Convert API templates to UI format
+  const uiTemplates = useMemo(() => {
+    return templates.map((apiTemplate): StrategyTemplate => ({
+      id: apiTemplate._id,
+      name: apiTemplate.name,
+      description: apiTemplate.description,
+      category: apiTemplate.category,
+      defaultParameters: apiTemplate.defaultParameters,
+      parameterSchema: apiTemplate.parameterSchema,
+      code: apiTemplate.code,
+      isBuiltIn: apiTemplate.isBuiltIn,
+      createdAt: new Date(apiTemplate.createdAt),
+    }));
+  }, [templates]);
 
   if (!user) {
     return null;
   }
+
+  const isLoading = strategiesLoading || countsLoading || templatesLoading;
 
   return (
     <MainLayout user={user}>
@@ -243,7 +239,7 @@ export default function StrategiesPage() {
               />
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
@@ -254,7 +250,7 @@ export default function StrategiesPage() {
               <Filter className="h-4 w-4" />
               <span>Filters</span>
             </Button>
-            
+
             <div className="flex items-center border border-neutral-200 dark:border-neutral-700 rounded-lg">
               <Button
                 variant={viewMode === 'grid' ? 'primary' : 'ghost'}
@@ -296,7 +292,7 @@ export default function StrategiesPage() {
                   <option value="DRAFT">Draft ({getStatusCount('DRAFT')})</option>
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                   Sort By
@@ -312,7 +308,7 @@ export default function StrategiesPage() {
                   <option value="performance">Performance</option>
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                   Order
@@ -352,7 +348,7 @@ export default function StrategiesPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 rounded-lg p-4">
             <div className="flex items-center space-x-2">
               <Pause className="h-5 w-5 text-warning-600" />
@@ -364,7 +360,7 @@ export default function StrategiesPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg p-4">
             <div className="flex items-center space-x-2">
               <Square className="h-5 w-5 text-danger-600" />
@@ -376,7 +372,7 @@ export default function StrategiesPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
             <div className="flex items-center space-x-2">
               <FileText className="h-5 w-5 text-neutral-600" />
@@ -391,9 +387,14 @@ export default function StrategiesPage() {
         </div>
 
         {/* Strategies Grid/List */}
-        {filteredStrategies.length > 0 ? (
+        {strategiesLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+            <span className="ml-2 text-neutral-600 dark:text-neutral-400">Loading strategies...</span>
+          </div>
+        ) : filteredStrategies.length > 0 ? (
           <div className={cn(
-            viewMode === 'grid' 
+            viewMode === 'grid'
               ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
               : 'space-y-4'
           )}>
@@ -418,7 +419,7 @@ export default function StrategiesPage() {
               No strategies found
             </h3>
             <p className="text-neutral-600 dark:text-neutral-400 mb-6">
-              {searchQuery || statusFilter !== 'all' 
+              {searchQuery || statusFilter !== 'all'
                 ? 'Try adjusting your search or filters'
                 : 'Create your first trading strategy to get started'
               }
@@ -438,7 +439,7 @@ export default function StrategiesPage() {
           onClose={() => setShowCreateModal(false)}
           onCreateFromTemplate={handleCreateFromTemplate}
           onCreateFromScratch={handleCreateFromScratch}
-          templates={mockStrategyTemplates}
+          templates={uiTemplates}
         />
       </div>
     </MainLayout>

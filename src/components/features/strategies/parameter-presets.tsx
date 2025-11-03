@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Button, Input, Modal } from '@/components/ui';
 import { ParameterSchema } from '@/types/trading';
+import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 
 interface ParameterPreset {
@@ -53,6 +54,7 @@ export function ParameterPresets({
     description: '',
     tags: '',
   });
+  const { addToast } = useToast();
 
   // Load presets from localStorage on mount
   useEffect(() => {
@@ -125,7 +127,11 @@ export function ParameterPresets({
     
     const validation = validateParameters(currentParameters);
     if (!validation.isValid) {
-      alert(`Cannot save preset with invalid parameters:\n${validation.errors.join('\n')}`);
+      addToast({
+        type: 'error',
+        title: 'Invalid Parameters',
+        description: `Cannot save preset: ${validation.errors.join(', ')}`
+      });
       return;
     }
 
@@ -159,7 +165,11 @@ export function ParameterPresets({
   const handleApplyPreset = (preset: ParameterPreset) => {
     const validation = validateParameters(preset.parameters);
     if (!validation.isValid) {
-      alert(`Cannot apply preset with invalid parameters:\n${validation.errors.join('\n')}`);
+      addToast({
+        type: 'error',
+        title: 'Invalid Preset',
+        description: `Cannot apply preset: ${validation.errors.join(', ')}`
+      });
       return;
     }
     onApplyPreset(preset.parameters);
@@ -219,10 +229,18 @@ export function ParameterPresets({
           }));
           
           setPresets(prev => [...prev, ...validPresets]);
-          alert(`Successfully imported ${validPresets.length} presets`);
+          addToast({
+            type: 'success',
+            title: 'Import Successful',
+            description: `Successfully imported ${validPresets.length} presets`
+          });
         }
       } catch (error) {
-        alert('Failed to import presets. Please check the file format.');
+        addToast({
+          type: 'error',
+          title: 'Import Failed',
+          description: 'Failed to import presets. Please check the file format.'
+        });
       }
     };
     reader.readAsText(file);
