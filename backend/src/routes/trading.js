@@ -1,66 +1,48 @@
 const express = require('express');
 const { protect } = require('../middleware/auth');
+const {
+  getPortfolio,
+  getPositions,
+  closePosition,
+  setStopLoss,
+  setTakeProfit,
+  placeOrder,
+  getOrders,
+  getActiveOrders,
+  cancelOrder,
+  modifyOrder,
+  getMarketData,
+  getSymbolData,
+  getHistoricalData,
+  getOHLCData,
+  exportOrders,
+  exportPositions
+} = require('../controllers/tradingController');
 
 const router = express.Router();
 
-// @desc    Get user portfolio
-// @route   GET /api/v1/trading/portfolio
-// @access  Private
-router.get('/portfolio', protect, async (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Get portfolio endpoint - Coming soon',
-    data: {
-      totalValue: 100000,
-      dayChange: 1250.50,
-      dayChangePercent: 1.25,
-      positions: []
-    }
-  });
-});
+// Portfolio routes
+router.get('/portfolio', protect, getPortfolio);
 
-// @desc    Get user positions
-// @route   GET /api/v1/trading/positions
-// @access  Private
-router.get('/positions', protect, async (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Get positions endpoint - Coming soon',
-    data: []
-  });
-});
+// Position routes
+router.get('/positions', protect, getPositions);
+router.post('/positions/:id/close', protect, closePosition);
+router.post('/positions/:id/stop-loss', protect, setStopLoss);
+router.post('/positions/:id/take-profit', protect, setTakeProfit);
+router.get('/positions/export', protect, exportPositions);
 
-// @desc    Place order
-// @route   POST /api/v1/trading/orders
-// @access  Private
-router.post('/orders', protect, async (req, res) => {
-  res.status(201).json({
-    success: true,
-    message: 'Place order endpoint - Coming soon',
-    data: {}
-  });
-});
+// Order routes
+router.post('/orders', protect, placeOrder);
+router.get('/orders', protect, getOrders);
+router.get('/orders/active', protect, getActiveOrders);
+router.delete('/orders/:id', protect, cancelOrder);
+router.put('/orders/:id', protect, modifyOrder);
+router.get('/orders/export', protect, exportOrders);
 
-// @desc    Get orders
-// @route   GET /api/v1/trading/orders
-// @access  Private
-router.get('/orders', protect, async (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Get orders endpoint - Coming soon',
-    data: []
-  });
-});
-
-// @desc    Get market data
-// @route   GET /api/v1/trading/market-data
-// @access  Private
-router.get('/market-data', protect, async (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Get market data endpoint - Coming soon',
-    data: {}
-  });
-});
+// Market data routes
+router.get('/market-data', protect, getMarketData);
+router.get('/market-data/:symbol', protect, getSymbolData);
+router.get('/market-data/:symbol/history', protect, getHistoricalData);
+router.get('/market-data/:symbol/ohlc', protect, getOHLCData);
 
 module.exports = router;

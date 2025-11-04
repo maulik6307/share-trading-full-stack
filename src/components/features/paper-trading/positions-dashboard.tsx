@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui';
 import { useToast } from '@/components/ui';
 import { Position, MarketData } from '@/types/trading';
+import { formatSafeNumber, formatSafeCurrency } from '@/lib/utils/date-transform';
 import { cn } from '@/lib/utils';
 
 interface PositionsDashboardProps {
@@ -24,7 +25,7 @@ interface PositionsDashboardProps {
   className?: string;
 }
 
-export function PositionsDashboard({ 
+const PositionsDashboardComponent = function PositionsDashboard({ 
   positions, 
   marketData, 
   onClosePosition, 
@@ -111,7 +112,7 @@ export function PositionsDashboard({
     addToast({
       type: 'info',
       title: 'Stop Loss Set',
-      description: `Stop loss set at ₹${stopPrice.toFixed(2)} for ${position.symbol}.`
+      description: `Stop loss set at ${formatSafeCurrency(stopPrice)} for ${position.symbol}.`
     });
   };
 
@@ -130,20 +131,18 @@ export function PositionsDashboard({
     addToast({
       type: 'info',
       title: 'Take Profit Set',
-      description: `Take profit set at ₹${targetPrice.toFixed(2)} for ${position.symbol}.`
+      description: `Take profit set at ${formatSafeCurrency(targetPrice)} for ${position.symbol}.`
     });
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 2,
-    }).format(value);
+  const formatCurrency = (value: number | undefined | null) => {
+    return formatSafeCurrency(value);
   };
 
-  const formatPercent = (value: number) => {
-    return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+  const formatPercent = (value: number | undefined | null) => {
+    const safeValue = formatSafeNumber(value, 2);
+    const numValue = value || 0;
+    return `${numValue >= 0 ? '+' : ''}${safeValue}%`;
   };
 
   if (positions.length === 0) {
@@ -286,7 +285,7 @@ export function PositionsDashboard({
                         </span>
                       </div>
                       <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                        {Math.abs(position.quantity)} shares @ ₹{position.avgPrice.toFixed(2)}
+                        {Math.abs(position.quantity || 0)} shares @ {formatSafeCurrency(position.avgPrice)}
                       </div>
                     </div>
                   </div>
@@ -314,7 +313,7 @@ export function PositionsDashboard({
                   <div>
                     <span className="text-xs text-neutral-600 dark:text-neutral-400">Current Price</span>
                     <div className="font-medium text-neutral-900 dark:text-white">
-                      ₹{metrics.currentPrice.toFixed(2)}
+                      {formatSafeCurrency(metrics.currentPrice)}
                     </div>
                   </div>
                   <div>
@@ -423,4 +422,7 @@ export function PositionsDashboard({
       </div>
     </div>
   );
-}
+};
+
+// Memoize the component to prevent unnecessary re-renders
+export const PositionsDashboard = memo(PositionsDashboardComponent);

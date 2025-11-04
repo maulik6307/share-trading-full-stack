@@ -5,15 +5,18 @@ import { TrendingUp, TrendingDown, Pause, Play } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useMarketData } from '@/lib/hooks/use-mock-socket';
 import { mockSymbols } from '@/mocks/data/symbols';
+import { MarketData } from '@/types/trading';
 
 interface PriceTickerProps {
   symbols?: string[];
+  marketData?: MarketData[];
   speed?: 'slow' | 'medium' | 'fast';
   showControls?: boolean;
 }
 
 export function PriceTicker({ 
   symbols = mockSymbols.slice(0, 10).map(s => s.symbol), 
+  marketData = [],
   speed = 'medium',
   showControls = true 
 }: PriceTickerProps) {
@@ -21,7 +24,37 @@ export function PriceTicker({
   const [currentIndex, setCurrentIndex] = useState(0);
   const tickerRef = useRef<HTMLDivElement>(null);
   
-  const { marketDataMap } = useMarketData(symbols);
+  // Use provided marketData or fallback to mock data
+  const { marketDataMap } = useMarketData(marketData.length > 0 ? [] : symbols);
+  
+  // Create a map from provided marketData
+  const providedDataMap = marketData.reduce((acc, data) => {
+    acc[data.symbol] = data;
+    return acc;
+  }, {} as Record<string, MarketData>);
+  
+  // Helper function to get market data from either source
+  const getMarketDataForSymbol = (symbol: string): MarketData | undefined => {
+    if (marketData.length > 0) {
+      return providedDataMap[symbol];
+    } else {
+      const mockData = marketDataMap.get(symbol);
+      return mockData ? {
+        symbol: mockData.symbol,
+        price: mockData.price,
+        change: mockData.change,
+        changePercent: mockData.changePercent,
+        volume: mockData.volume,
+        high: mockData.price * 1.02,
+        low: mockData.price * 0.98,
+        open: mockData.price - mockData.change,
+        previousClose: mockData.price - mockData.change,
+        timestamp: mockData.timestamp,
+        bid: mockData.price * 0.999,
+        ask: mockData.price * 1.001
+      } : undefined;
+    }
+  };
   
   // Animation speeds in milliseconds
   const speeds = {
@@ -52,9 +85,10 @@ export function PriceTicker({
     }
   }, [currentIndex, symbols.length]);
 
-  const formatPrice = (price: number) => `₹${price.toFixed(2)}`;
-  const formatChange = (change: number, changePercent: number) => {
-    const sign = change >= 0 ? '+' : '';
+  const formatPrice = (price: number | undefined | null) => `₹${price ? price.toFixed(2) : '0.00'}`;
+  const formatChange = (change: number | undefined | null, changePercent: number | undefined | null) => {
+    if (!changePercent) return '0.00%';
+    const sign = changePercent >= 0 ? '+' : '';
     return `${sign}${changePercent.toFixed(2)}%`;
   };
 
@@ -113,7 +147,7 @@ export function PriceTicker({
         >
           <div className="flex space-x-8 px-4 min-w-max">
             {symbols.map(symbolCode => {
-              const marketData = marketDataMap.get(symbolCode);
+              const marketData = getMarketDataForSymbol(symbolCode);
               const symbolName = getSymbolName(symbolCode);
               
               return (
@@ -173,36 +207,39 @@ export function PriceTicker({
                   </span>
                 </div>
                 
-                {marketDataMap.get(symbols[currentIndex]) ? (
-                  <div className="flex items-center space-x-2">
-                    <span className="text-lg font-bold">
-                      {formatPrice(marketDataMap.get(symbols[currentIndex])!.price)}
-                    </span>
-                    
-                    <div className={`flex items-center space-x-1 ${
-                      marketDataMap.get(symbols[currentIndex])!.change >= 0
-                        ? 'text-green-400'
-                        : 'text-red-400'
-                    }`}>
-                      {marketDataMap.get(symbols[currentIndex])!.change >= 0 ? (
-                        <TrendingUp className="w-4 h-4" />
-                      ) : (
-                        <TrendingDown className="w-4 h-4" />
-                      )}
-                      <span className="text-sm font-medium">
-                        {formatChange(
-                          marketDataMap.get(symbols[currentIndex])!.change,
-                          marketDataMap.get(symbols[currentIndex])!.changePercent
-                        )}
+                {(() => {
+                  const currentSymbolData = getMarketDataForSymbol(symbols[currentIndex]);
+                  return currentSymbolData ? (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg font-bold">
+                        {formatPrice(currentSymbolData.price)}
                       </span>
+                      
+                      <div className={`flex items-center space-x-1 ${
+                        currentSymbolData.change >= 0
+                          ? 'text-green-400'
+                          : 'text-red-400'
+                      }`}>
+                        {currentSymbolData.change >= 0 ? (
+                          <TrendingUp className="w-4 h-4" />
+                        ) : (
+                          <TrendingDown className="w-4 h-4" />
+                        )}
+                        <span className="text-sm font-medium">
+                          {formatChange(
+                            currentSymbolData.change,
+                            currentSymbolData.changePercent
+                          )}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <span className="text-lg font-bold text-neutral-500">--</span>
-                    <span className="text-sm text-neutral-500">Loading...</span>
-                  </div>
-                )}
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg font-bold text-neutral-500">--</span>
+                      <span className="text-sm text-neutral-500">Loading...</span>
+                    </div>
+                  );
+                })()}
               </div>
               
               {/* Mobile Navigation Dots */}

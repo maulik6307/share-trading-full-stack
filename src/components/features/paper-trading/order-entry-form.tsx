@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -37,7 +37,7 @@ const initialFormData: OrderFormData = {
   quantity: 0,
 };
 
-export function OrderEntryForm({ symbols, marketData, onPlaceOrder, className }: OrderEntryFormProps) {
+const OrderEntryFormComponent = function OrderEntryForm({ symbols, marketData, onPlaceOrder, className }: OrderEntryFormProps) {
   const [formData, setFormData] = useState<OrderFormData>(initialFormData);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -504,4 +504,7 @@ export function OrderEntryForm({ symbols, marketData, onPlaceOrder, className }:
       </Modal>
     </>
   );
-}
+};
+
+// Memoize the component to prevent unnecessary re-renders
+export const OrderEntryForm = memo(OrderEntryFormComponent);

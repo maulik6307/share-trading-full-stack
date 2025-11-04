@@ -8,6 +8,7 @@ import { mockSymbols } from '@/mocks/data/symbols';
 import { Symbol, MarketData, Watchlist } from '@/types/trading';
 
 interface MarketWatchlistProps {
+  marketData?: MarketData[];
   onSymbolSelect?: (symbol: string) => void;
   selectedSymbol?: string;
 }
@@ -19,7 +20,7 @@ interface WatchlistItem extends Symbol {
   alertType?: 'above' | 'below';
 }
 
-export function MarketWatchlist({ onSymbolSelect, selectedSymbol }: MarketWatchlistProps) {
+export function MarketWatchlist({ marketData = [], onSymbolSelect, selectedSymbol }: MarketWatchlistProps) {
   const [watchlists, setWatchlists] = useState<Watchlist[]>([
     {
       id: 'default',
@@ -41,9 +42,15 @@ export function MarketWatchlist({ onSymbolSelect, selectedSymbol }: MarketWatchl
   const activeWatchlist = watchlists.find(w => w.id === activeWatchlistId);
   const watchedSymbols = activeWatchlist?.symbols || [];
   
-  // Get real-time market data for watched symbols
-  const { marketDataMap, lastUpdate } = useMarketData(watchedSymbols);
+  // Get real-time market data for watched symbols (fallback to mock if no data provided)
+  const { marketDataMap, lastUpdate } = useMarketData(marketData.length > 0 ? [] : watchedSymbols);
   const { simulateAlert } = useMockSocketControls();
+
+  // Create a map from provided marketData
+  const providedDataMap = marketData.reduce((acc, data) => {
+    acc[data.symbol] = data;
+    return acc;
+  }, {} as Record<string, MarketData>);
 
   // Filter available symbols for search
   const filteredSymbols = useMemo(() => {
@@ -61,32 +68,39 @@ export function MarketWatchlist({ onSymbolSelect, selectedSymbol }: MarketWatchl
   const watchlistItems: WatchlistItem[] = useMemo(() => {
     return watchedSymbols.map(symbolCode => {
       const symbol = mockSymbols.find(s => s.symbol === symbolCode);
-      const marketDataUpdate = marketDataMap.get(symbolCode);
       const alertConfig = alertSettings[symbolCode];
       
-      // Convert MarketDataUpdate to MarketData format
-      const marketData: MarketData | undefined = marketDataUpdate ? {
-        symbol: marketDataUpdate.symbol,
-        price: marketDataUpdate.price,
-        change: marketDataUpdate.change,
-        changePercent: marketDataUpdate.changePercent,
-        volume: marketDataUpdate.volume,
-        high: marketDataUpdate.price * 1.02, // Mock high
-        low: marketDataUpdate.price * 0.98, // Mock low
-        open: marketDataUpdate.price - marketDataUpdate.change, // Mock open
-        previousClose: marketDataUpdate.price - marketDataUpdate.change, // Mock previous close
-        timestamp: marketDataUpdate.timestamp,
-      } : undefined;
+      // Use provided market data if available, otherwise use mock data
+      let marketDataForSymbol: MarketData | undefined;
+      
+      if (marketData.length > 0) {
+        marketDataForSymbol = providedDataMap[symbolCode];
+      } else {
+        const marketDataUpdate = marketDataMap.get(symbolCode);
+        // Convert MarketDataUpdate to MarketData format
+        marketDataForSymbol = marketDataUpdate ? {
+          symbol: marketDataUpdate.symbol,
+          price: marketDataUpdate.price,
+          change: marketDataUpdate.change,
+          changePercent: marketDataUpdate.changePercent,
+          volume: marketDataUpdate.volume,
+          high: marketDataUpdate.price * 1.02, // Mock high
+          low: marketDataUpdate.price * 0.98, // Mock low
+          open: marketDataUpdate.price - marketDataUpdate.change, // Mock open
+          previousClose: marketDataUpdate.price - marketDataUpdate.change, // Mock previous close
+          timestamp: marketDataUpdate.timestamp,
+        } : undefined;
+      }
       
       return {
         ...symbol!,
-        marketData,
+        marketData: marketDataForSymbol,
         alertEnabled: alertConfig?.enabled || false,
         alertThreshold: alertConfig?.threshold,
         alertType: alertConfig?.type,
       };
     }).filter(Boolean);
-  }, [watchedSymbols, marketDataMap, alertSettings]);
+  }, [watchedSymbols, marketDataMap, alertSettings, marketData, providedDataMap]);
 
   // Check for price alerts
   useEffect(() => {

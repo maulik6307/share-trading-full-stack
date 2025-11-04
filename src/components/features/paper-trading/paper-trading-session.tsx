@@ -7,6 +7,7 @@ import { Button, Badge, useToast } from '@/components/ui';
 import { Play, Pause, Square, TrendingUp, TrendingDown, AlertTriangle, Clock, DollarSign } from 'lucide-react';
 import { mockOrderService } from '@/mocks/services/order-service';
 import { mockPositionService } from '@/mocks/services/position-service';
+import { formatSafeDate } from '@/lib/utils/date-transform';
 
 export interface PaperTradingSession {
   id: string;
@@ -490,7 +491,7 @@ export function PaperTradingSessionComponent({
             {session.status === 'RUNNING' ? `${nextSignalCountdown}s` : '--'}
           </p>
           <p className="text-xs text-neutral-500">
-            {lastSignalTime ? lastSignalTime.toLocaleTimeString() : 'None'}
+            {lastSignalTime ? formatSafeDate(lastSignalTime, { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'None'}
           </p>
         </div>
       </div>
@@ -609,7 +610,7 @@ export function PaperTradingSessionComponent({
                   </p>
                 </div>
                 <span className="text-xs text-neutral-500">
-                  {alert.createdAt.toLocaleTimeString()}
+                  {formatSafeDate(alert.createdAt, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </span>
               </div>
             ))}

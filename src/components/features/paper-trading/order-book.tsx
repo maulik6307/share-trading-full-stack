@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { TrendingUp, TrendingDown, Clock, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { Order, OrderStatus } from '@/types/trading';
 import { cn } from '@/lib/utils';
+import { formatSafeDate } from '@/lib/utils/date-transform';
 
 interface OrderBookProps {
   orders: Order[];
@@ -20,7 +21,7 @@ interface OrderBookEntry {
   orders: Order[];
 }
 
-export function OrderBook({ orders, onCancelOrder, onModifyOrder, className }: OrderBookProps) {
+const OrderBookComponent = function OrderBook({ orders, onCancelOrder, onModifyOrder, className }: OrderBookProps) {
   const [selectedSymbol, setSelectedSymbol] = useState<string>('');
   const [showAllOrders, setShowAllOrders] = useState(false);
 
@@ -84,12 +85,12 @@ export function OrderBook({ orders, onCancelOrder, onModifyOrder, className }: O
     }).format(value);
   };
 
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat('en-IN', {
+  const formatTime = (date: Date | string) => {
+    return formatSafeDate(date, {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-    }).format(date);
+    });
   };
 
   const getStatusColor = (status: OrderStatus) => {
@@ -334,4 +335,7 @@ export function OrderBook({ orders, onCancelOrder, onModifyOrder, className }: O
       </div>
     </div>
   );
-}
+};
+
+// Memoize the component to prevent unnecessary re-renders
+export const OrderBook = memo(OrderBookComponent);

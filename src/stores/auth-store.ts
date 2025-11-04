@@ -25,6 +25,7 @@ interface AuthActions {
   refreshToken: () => Promise<void>;
   clearError: () => void;
   initializeAuth: () => void;
+  setupDemoUser: () => void;
 }
 
 interface AuthStore extends AuthState, AuthActions { }
@@ -315,10 +316,50 @@ export const useAuthStore = create<AuthStore>()(
             isAuthenticated: true
           });
         } else {
-          set({
-            user: null,
-            isAuthenticated: false
-          });
+          // For demo purposes, set up a demo user if no authentication
+          get().setupDemoUser();
+        }
+      },
+
+      setupDemoUser: () => {
+        const demoUser: User = {
+          id: 'demo-user-1',
+          name: 'Demo User',
+          email: 'demo@example.com',
+          username: 'demo_user',
+          avatar: undefined,
+          role: 'user',
+          phone: undefined,
+          country: 'IN',
+          bio: 'Demo user for paper trading',
+          timezone: 'Asia/Kolkata',
+          language: 'en',
+          preferences: {
+            theme: 'light',
+            currency: 'INR',
+            defaultCurrency: 'INR',
+            dateFormat: 'DD/MM/YYYY',
+            notifications: {
+              email: true,
+              push: true,
+              sms: false,
+              trading: true,
+              marketing: false,
+            },
+          },
+        };
+
+        set({
+          user: demoUser,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null
+        });
+
+        // Store demo token for WebSocket connection
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('token', 'demo-token');
+          localStorage.setItem('user', JSON.stringify(demoUser));
         }
       }
     }),

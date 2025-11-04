@@ -5,7 +5,8 @@ import { Bell, BellOff, Plus, X, TrendingUp, TrendingDown, AlertTriangle, CheckC
 import { Button, Input, Modal } from '@/components/ui';
 import { useSystemAlerts, useMarketData, useMockSocketControls } from '@/lib/hooks/use-mock-socket';
 import { mockSymbols } from '@/mocks/data/symbols';
-import { Alert } from '@/types/trading';
+import { Alert, MarketData } from '@/types/trading';
+import { formatSafeDate } from '@/lib/utils/date-transform';
 
 interface PriceAlert {
   id: string;
@@ -20,9 +21,10 @@ interface PriceAlert {
 
 interface PriceAlertsProps {
   watchedSymbols?: string[];
+  marketData?: MarketData[];
 }
 
-export function PriceAlerts({ watchedSymbols = [] }: PriceAlertsProps) {
+export function PriceAlerts({ watchedSymbols = [], marketData = [] }: PriceAlertsProps) {
   const [alerts, setAlerts] = useState<PriceAlert[]>([]);
   const [showCreateAlert, setShowCreateAlert] = useState(false);
   const [newAlert, setNewAlert] = useState({
@@ -71,17 +73,17 @@ export function PriceAlerts({ watchedSymbols = [] }: PriceAlertsProps) {
       switch (alert.type) {
         case 'above':
           shouldTrigger = marketData.price >= alert.threshold;
-          message = `${alert.symbol} price above ₹${alert.threshold.toFixed(2)}: ₹${marketData.price.toFixed(2)}`;
+          message = `${alert.symbol} price above ₹${alert.threshold ? alert.threshold.toFixed(2) : '0.00'}: ₹${marketData.price ? marketData.price.toFixed(2) : '0.00'}`;
           break;
           
         case 'below':
           shouldTrigger = marketData.price <= alert.threshold;
-          message = `${alert.symbol} price below ₹${alert.threshold.toFixed(2)}: ₹${marketData.price.toFixed(2)}`;
+          message = `${alert.symbol} price below ₹${alert.threshold ? alert.threshold.toFixed(2) : '0.00'}: ₹${marketData.price ? marketData.price.toFixed(2) : '0.00'}`;
           break;
           
         case 'change_percent':
-          shouldTrigger = Math.abs(marketData.changePercent) >= alert.threshold;
-          message = `${alert.symbol} price change ${marketData.changePercent >= 0 ? '+' : ''}${marketData.changePercent.toFixed(2)}% (threshold: ${alert.threshold}%)`;
+          shouldTrigger = Math.abs(marketData.changePercent || 0) >= alert.threshold;
+          message = `${alert.symbol} price change ${(marketData.changePercent || 0) >= 0 ? '+' : ''}${marketData.changePercent ? marketData.changePercent.toFixed(2) : '0.00'}% (threshold: ${alert.threshold}%)`;
           break;
       }
       
@@ -303,16 +305,16 @@ export function PriceAlerts({ watchedSymbols = [] }: PriceAlertsProps) {
                             {formatAlertType(alert.type)}
                           </span>
                           <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                            {alert.type === 'change_percent' ? `${alert.threshold}%` : `₹${alert.threshold.toFixed(2)}`}
+                            {alert.type === 'change_percent' ? `${alert.threshold}%` : `₹${alert.threshold ? alert.threshold.toFixed(2) : '0.00'}`}
                           </span>
                         </div>
                         
                         <div className="flex items-center space-x-4 text-xs text-neutral-500 dark:text-neutral-400">
                           <span>{getSymbolName(alert.symbol)}</span>
                           {getCurrentPrice(alert.symbol) && (
-                            <span>Current: ₹{getCurrentPrice(alert.symbol)!.toFixed(2)}</span>
+                            <span>Current: ₹{getCurrentPrice(alert.symbol) ? getCurrentPrice(alert.symbol)!.toFixed(2) : '0.00'}</span>
                           )}
-                          <span>Created: {alert.createdAt.toLocaleDateString()}</span>
+                          <span>Created: {formatSafeDate(alert.createdAt, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                           {alert.triggeredAt && (
                             <span className="text-green-600 dark:text-green-400">
                               Triggered: {alert.triggeredAt.toLocaleString()}
@@ -421,7 +423,7 @@ export function PriceAlerts({ watchedSymbols = [] }: PriceAlertsProps) {
             
             {newAlert.symbol && getCurrentPrice(newAlert.symbol) && (
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                Current price: ₹{getCurrentPrice(newAlert.symbol)!.toFixed(2)}
+                Current price: ₹{getCurrentPrice(newAlert.symbol) ? getCurrentPrice(newAlert.symbol)!.toFixed(2) : '0.00'}
               </p>
             )}
           </div>

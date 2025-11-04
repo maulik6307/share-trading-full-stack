@@ -16,6 +16,7 @@ import {
 import { Input, Select, Button } from '@/components/ui';
 import { Order, OrderStatus, OrderSide, OrderType } from '@/types/trading';
 import { cn } from '@/lib/utils';
+import { formatSafeDate } from '@/lib/utils/date-transform';
 
 interface OrderHistoryProps {
   orders: Order[];
@@ -118,14 +119,14 @@ export function OrderHistory({ orders, onExportCSV, className }: OrderHistoryPro
     }).format(value);
   };
 
-  const formatDateTime = (date: Date) => {
-    return new Intl.DateTimeFormat('en-IN', {
+  const formatDateTime = (date: Date | string) => {
+    return formatSafeDate(date, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    }).format(date);
+    });
   };
 
   const getStatusIcon = (status: OrderStatus) => {

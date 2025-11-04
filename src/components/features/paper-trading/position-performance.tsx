@@ -141,7 +141,10 @@ export function PositionPerformance({
     }).format(value);
   };
 
-  const formatPercent = (value: number) => {
+  const formatPercent = (value: number | undefined | null) => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return '0.00%';
+    }
     return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
   };
 
@@ -219,7 +222,7 @@ export function PositionPerformance({
             </div>
             <p className="text-xs text-neutral-600 dark:text-neutral-400">Win Rate</p>
             <p className="text-lg font-semibold text-neutral-900 dark:text-white">
-              {performanceMetrics.winRate.toFixed(1)}%
+              {performanceMetrics.winRate ? performanceMetrics.winRate.toFixed(1) : '0.0'}%
             </p>
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
               {performanceMetrics.totalTrades} trades
@@ -317,7 +320,7 @@ export function PositionPerformance({
                   cy="50%"
                   outerRadius={80}
                   dataKey="value"
-                  label={({ sector, percentage }) => `${sector} (${percentage.toFixed(1)}%)`}
+                  label={({ sector, percentage }) => `${sector} (${percentage ? percentage.toFixed(1) : '0.0'}%)`}
                 >
                   {sectorAllocation.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -386,7 +389,7 @@ export function PositionPerformance({
                     {activity.action.replace('_', ' ')} - {activity.quantity} shares
                   </div>
                   <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {activity.timestamp.toLocaleDateString('en-IN')} at ₹{activity.price.toFixed(2)}
+                    {activity.timestamp.toLocaleDateString('en-IN')} at ₹{activity.price ? activity.price.toFixed(2) : '0.00'}
                     {activity.reason && ` - ${activity.reason}`}
                   </div>
                 </div>

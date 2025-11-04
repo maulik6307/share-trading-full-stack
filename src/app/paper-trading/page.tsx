@@ -1,231 +1,117 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { MainLayout } from '@/components/layout';
 import { useAuthStore } from '@/stores/auth-store';
 import { useToast } from '@/components/ui';
 import { OrderEntryForm, OrderBook, OrderHistory, PositionsDashboard, PositionPerformance, MarketWatchlist, PriceTicker, MarketDataChart, PriceAlerts, PaperTradingSessionsManager, PerformanceMonitor, type PaperTradingSession } from '@/components/features/paper-trading';
-import { mockOrderService } from '@/mocks/services/order-service';
-import { mockPositionService } from '@/mocks/services/position-service';
-import { mockSymbols, mockMarketData } from '@/mocks/data/symbols';
-import { Order, Position, Portfolio } from '@/types/trading';
-import { useSocketConnection } from '@/lib/hooks/use-mock-socket';
+import { useTrading } from '@/hooks/use-trading';
+import { useMarketData } from '@/hooks/use-market-data';
+import { Order } from '@/types/trading';
 
 export default function PaperTradingPage() {
   const { user } = useAuthStore();
   const { addToast } = useToast();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [positions, setPositions] = useState<Position[]>([]);
-  const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [activeTab, setActiveTab] = useState<'entry' | 'book' | 'history' | 'positions' | 'performance' | 'watchlist' | 'alerts' | 'deployment' | 'monitor'>('entry');
   const [selectedSymbol, setSelectedSymbol] = useState<string>('RELIANCE');
   const [paperTradingSessions, setPaperTradingSessions] = useState<PaperTradingSession[]>([]);
-  
-  // Connect to MockSocket for real-time data
-  const { connect, isConnected } = useSocketConnection();
 
-  useEffect(() => {
-    // Connect to MockSocket for real-time market data
-    if (!isConnected) {
-      connect();
-    }
+  // Use real trading APIs - memoized to prevent unnecessary re-renders
+  const {
+    portfolio,
+    positions,
+    orders,
+    activeOrders,
+    loading: tradingLoading,
+    placeOrder,
+    cancelOrder,
+    closePosition,
+    setStopLoss,
+    setTakeProfit,
+    exportOrders,
+    exportPositions
+  } = useTrading();
 
-    // Load initial orders
-    setOrders(mockOrderService.getOrders());
+  // Use real market data - memoized symbols array
+  const watchlistSymbols = useMemo(() => ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'HINDUNILVR', 'ITC', 'SBIN', 'BHARTIARTL', 'KOTAKBANK'], []);
+  const { marketData, loading: marketDataLoading } = useMarketData(watchlistSymbols);
 
-    // Load initial positions and portfolio
-    setPositions(mockPositionService.getPositions());
-    setPortfolio(mockPositionService.getPortfolio());
+  // Memoize symbols for OrderEntryForm to prevent re-renders
+  const symbolsForOrderForm = useMemo(() => 
+    watchlistSymbols.map(symbol => ({
+      symbol,
+      name: symbol,
+      exchange: 'NSE',
+      sector: 'Technology',
+      currency: 'INR',
+      lotSize: 1,
+      tickSize: 0.05,
+      isActive: true
+    })), [watchlistSymbols]
+  );
 
-    // Subscribe to order updates
-    const unsubscribeOrders = mockOrderService.subscribe((updatedOrders) => {
-      setOrders(updatedOrders);
-    });
-
-    // Subscribe to position updates
-    const unsubscribePositions = mockPositionService.subscribe((updatedPositions, updatedPortfolio) => {
-      setPositions(updatedPositions);
-      setPortfolio(updatedPortfolio);
-    });
-
-    return () => {
-      unsubscribeOrders();
-      unsubscribePositions();
-    };
-  }, [connect, isConnected]);
-
-  const handlePlaceOrder = (orderData: Omit<Order, 'id' | 'status' | 'filledQuantity' | 'remainingQuantity' | 'commission' | 'createdAt' | 'updatedAt'>) => {
+  // Memoize event handlers to prevent unnecessary re-renders
+  const handlePlaceOrder = useCallback(async (orderData: Omit<Order, 'id' | 'status' | 'filledQuantity' | 'remainingQuantity' | 'commission' | 'createdAt' | 'updatedAt'>) => {
     try {
-      const order = mockOrderService.placeOrder(orderData);
-      
-      if (order.status === 'REJECTED') {
-        addToast({
-          type: 'error',
-          title: 'Order Rejected',
-          description: order.rejectionReason || 'Order was rejected by the system.'
-        });
-      } else {
-        addToast({
-          type: 'success',
-          title: 'Order Placed',
-          description: `${orderData.side} order for ${orderData.quantity} ${orderData.symbol} has been submitted.`
-        });
-      }
+      await placeOrder(orderData);
     } catch (error) {
-      addToast({
-        type: 'error',
-        title: 'Order Failed',
-        description: 'Failed to place order. Please try again.'
-      });
+      // Error handling is done in the hook
     }
-  };
+  }, [placeOrder]);
 
-  const handleCancelOrder = (orderId: string) => {
-    const success = mockOrderService.cancelOrder(orderId);
-    
-    if (success) {
-      addToast({
-        type: 'success',
-        title: 'Order Cancelled',
-        description: 'Order has been successfully cancelled.'
-      });
-    } else {
-      addToast({
-        type: 'error',
-        title: 'Cancel Failed',
-        description: 'Unable to cancel order. It may already be filled or cancelled.'
-      });
-    }
-  };
-
-  const handleModifyOrder = (orderId: string) => {
-    // For now, just show a toast. In a real implementation, this would open a modify modal
-    addToast({
-      type: 'info',
-      title: 'Modify Order',
-      description: 'Order modification feature coming soon.'
-    });
-  };
-
-  const handleExportCSV = () => {
+  const handleCancelOrder = useCallback(async (orderId: string) => {
     try {
-      const csvContent = mockOrderService.exportOrdersToCSV();
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `orders-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      addToast({
-        type: 'success',
-        title: 'Export Complete',
-        description: 'Order history has been exported to CSV.'
-      });
+      await cancelOrder(orderId);
     } catch (error) {
-      addToast({
-        type: 'error',
-        title: 'Export Failed',
-        description: 'Failed to export order history.'
-      });
+      // Error handling is done in the hook
     }
-  };
+  }, [cancelOrder]);
 
-  const handleClosePosition = (positionId: string, quantity?: number) => {
-    const success = mockPositionService.closePosition(positionId, quantity);
-    
-    if (success) {
-      addToast({
-        type: 'success',
-        title: 'Position Closed',
-        description: quantity 
-          ? `Partially closed ${quantity} shares`
-          : 'Position has been fully closed.'
-      });
-    } else {
-      addToast({
-        type: 'error',
-        title: 'Close Failed',
-        description: 'Unable to close position. Please try again.'
-      });
-    }
-  };
+  const handleModifyOrder = useCallback((orderId: string) => {
+    // TODO: Implement order modification modal
+    console.log('Modify order:', orderId);
+  }, []);
 
-  const handleSetStopLoss = (positionId: string, stopPrice: number) => {
-    const success = mockPositionService.setStopLoss(positionId, stopPrice);
-    
-    if (success) {
-      addToast({
-        type: 'success',
-        title: 'Stop Loss Set',
-        description: `Stop loss has been set at ₹${stopPrice.toFixed(2)}.`
-      });
-    } else {
-      addToast({
-        type: 'error',
-        title: 'Failed to Set Stop Loss',
-        description: 'Unable to set stop loss. Please try again.'
-      });
-    }
-  };
-
-  const handleSetTakeProfit = (positionId: string, targetPrice: number) => {
-    const success = mockPositionService.setTakeProfit(positionId, targetPrice);
-    
-    if (success) {
-      addToast({
-        type: 'success',
-        title: 'Take Profit Set',
-        description: `Take profit has been set at ₹${targetPrice.toFixed(2)}.`
-      });
-    } else {
-      addToast({
-        type: 'error',
-        title: 'Failed to Set Take Profit',
-        description: 'Unable to set take profit. Please try again.'
-      });
-    }
-  };
-
-  const handleExportPositions = () => {
+  const handleClosePosition = useCallback(async (positionId: string, quantity?: number) => {
     try {
-      const csvContent = mockPositionService.exportPositionsToCSV();
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `positions-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      addToast({
-        type: 'success',
-        title: 'Export Complete',
-        description: 'Position data has been exported to CSV.'
-      });
+      await closePosition(positionId, quantity);
     } catch (error) {
-      addToast({
-        type: 'error',
-        title: 'Export Failed',
-        description: 'Failed to export position data.'
-      });
+      // Error handling is done in the hook
     }
-  };
+  }, [closePosition]);
+
+  const handleSetStopLoss = useCallback(async (positionId: string, stopPrice: number) => {
+    try {
+      await setStopLoss(positionId, stopPrice);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
+  }, [setStopLoss]);
+
+  const handleSetTakeProfit = useCallback(async (positionId: string, targetPrice: number) => {
+    try {
+      await setTakeProfit(positionId, targetPrice);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
+  }, [setTakeProfit]);
 
   if (!user) {
     return null;
   }
 
-  const activeOrders = orders.filter(order => 
-    order.status === 'PENDING' || order.status === 'PARTIALLY_FILLED'
-  );
+  if (tradingLoading || marketDataLoading) {
+    return (
+      <MainLayout user={user}>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <p className="text-neutral-600 dark:text-neutral-400">Loading trading data...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout user={user}>
@@ -241,8 +127,9 @@ export default function PaperTradingPage() {
         </div>
 
         {/* Price Ticker */}
-        <PriceTicker 
-          symbols={['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'HINDUNILVR', 'ITC', 'SBIN', 'BHARTIARTL', 'KOTAKBANK']}
+        <PriceTicker
+          symbols={watchlistSymbols}
+          marketData={marketData}
           speed="medium"
         />
 
@@ -251,24 +138,22 @@ export default function PaperTradingPage() {
           <nav className="flex space-x-8 overflow-x-auto">
             <button
               onClick={() => setActiveTab('entry')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'entry'
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
-              }`}
+              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'entry'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+                }`}
             >
               Order Entry
             </button>
             <button
               onClick={() => setActiveTab('book')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'book'
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
-              }`}
+              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'book'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+                }`}
             >
               Order Book
-              {activeOrders.length > 0 && (
+              {activeOrders && activeOrders.length > 0 && (
                 <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200">
                   {activeOrders.length}
                 </span>
@@ -276,24 +161,22 @@ export default function PaperTradingPage() {
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'history'
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
-              }`}
+              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'history'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+                }`}
             >
               Order History
             </button>
             <button
               onClick={() => setActiveTab('positions')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'positions'
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
-              }`}
+              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'positions'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+                }`}
             >
               Positions
-              {positions.length > 0 && (
+              {positions && positions.length > 0 && (
                 <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200">
                   {positions.length}
                 </span>
@@ -301,41 +184,37 @@ export default function PaperTradingPage() {
             </button>
             <button
               onClick={() => setActiveTab('performance')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'performance'
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
-              }`}
+              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'performance'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+                }`}
             >
               Performance
             </button>
             <button
               onClick={() => setActiveTab('watchlist')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'watchlist'
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
-              }`}
+              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'watchlist'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+                }`}
             >
               Market Data
             </button>
             <button
               onClick={() => setActiveTab('alerts')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'alerts'
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
-              }`}
+              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'alerts'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+                }`}
             >
               Alerts
             </button>
             <button
               onClick={() => setActiveTab('deployment')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'deployment'
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
-              }`}
+              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'deployment'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+                }`}
             >
               Strategy Deployment
               {paperTradingSessions.filter(s => s.status === 'RUNNING').length > 0 && (
@@ -346,11 +225,10 @@ export default function PaperTradingPage() {
             </button>
             <button
               onClick={() => setActiveTab('monitor')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'monitor'
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
-              }`}
+              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'monitor'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+                }`}
             >
               Performance Monitor
             </button>
@@ -363,14 +241,14 @@ export default function PaperTradingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1">
                 <OrderEntryForm
-                  symbols={mockSymbols}
-                  marketData={mockMarketData}
+                  symbols={symbolsForOrderForm}
+                  marketData={marketData}
                   onPlaceOrder={handlePlaceOrder}
                 />
               </div>
               <div className="lg:col-span-2">
                 <OrderBook
-                  orders={activeOrders}
+                  orders={activeOrders || []}
                   onCancelOrder={handleCancelOrder}
                   onModifyOrder={handleModifyOrder}
                 />
@@ -380,7 +258,7 @@ export default function PaperTradingPage() {
 
           {activeTab === 'book' && (
             <OrderBook
-              orders={activeOrders}
+              orders={activeOrders || []}
               onCancelOrder={handleCancelOrder}
               onModifyOrder={handleModifyOrder}
             />
@@ -388,15 +266,15 @@ export default function PaperTradingPage() {
 
           {activeTab === 'history' && (
             <OrderHistory
-              orders={orders}
-              onExportCSV={handleExportCSV}
+              orders={orders || []}
+              onExportCSV={exportOrders}
             />
           )}
 
           {activeTab === 'positions' && (
             <PositionsDashboard
-              positions={positions}
-              marketData={mockPositionService.getMarketData()}
+              positions={positions || []}
+              marketData={marketData}
               onClosePosition={handleClosePosition}
               onSetStopLoss={handleSetStopLoss}
               onSetTakeProfit={handleSetTakeProfit}
@@ -405,10 +283,10 @@ export default function PaperTradingPage() {
 
           {activeTab === 'performance' && portfolio && (
             <PositionPerformance
-              positions={positions}
+              positions={positions || []}
               portfolio={portfolio}
-              positionHistory={mockPositionService.getPositionHistory()}
-              onExportData={handleExportPositions}
+              positionHistory={[]} // TODO: Implement position history API
+              onExportData={exportPositions}
             />
           )}
 
@@ -416,6 +294,7 @@ export default function PaperTradingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1">
                 <MarketWatchlist
+                  marketData={marketData}
                   onSymbolSelect={setSelectedSymbol}
                   selectedSymbol={selectedSymbol}
                 />
@@ -431,7 +310,8 @@ export default function PaperTradingPage() {
 
           {activeTab === 'alerts' && (
             <PriceAlerts
-              watchedSymbols={['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK']}
+              watchedSymbols={watchlistSymbols}
+              marketData={marketData}
             />
           )}
 
@@ -458,10 +338,10 @@ export default function PaperTradingPage() {
                     riskMetrics: session.riskMetrics,
                   })),
                 };
-                
+
                 const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
-                
+
                 const link = document.createElement('a');
                 link.href = url;
                 link.download = `paper-trading-report-${new Date().toISOString().split('T')[0]}.json`;
@@ -490,40 +370,38 @@ export default function PaperTradingPage() {
           </div>
           <div className="text-center">
             <p className="text-sm text-neutral-600 dark:text-neutral-400">Total P&L</p>
-            <p className={`text-2xl font-bold ${
-              portfolio && portfolio.totalPnL >= 0 
-                ? 'text-green-600 dark:text-green-400' 
-                : 'text-red-600 dark:text-red-400'
-            }`}>
+            <p className={`text-2xl font-bold ${portfolio && portfolio.totalPnL >= 0
+              ? 'text-green-600 dark:text-green-400'
+              : 'text-red-600 dark:text-red-400'
+              }`}>
               {portfolio ? `₹${(portfolio.totalPnL / 1000).toFixed(1)}K` : '₹0'}
             </p>
           </div>
           <div className="text-center">
             <p className="text-sm text-neutral-600 dark:text-neutral-400">Open Positions</p>
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {positions.length}
+              {positions?.length || 0}
             </p>
           </div>
           <div className="text-center">
             <p className="text-sm text-neutral-600 dark:text-neutral-400">Active Orders</p>
             <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-              {activeOrders.length}
+              {activeOrders?.length || 0}
             </p>
           </div>
           <div className="text-center">
             <p className="text-sm text-neutral-600 dark:text-neutral-400">Day P&L</p>
-            <p className={`text-2xl font-bold ${
-              portfolio && portfolio.dayPnL >= 0 
-                ? 'text-green-600 dark:text-green-400' 
-                : 'text-red-600 dark:text-red-400'
-            }`}>
+            <p className={`text-2xl font-bold ${portfolio && portfolio.dayPnL >= 0
+              ? 'text-green-600 dark:text-green-400'
+              : 'text-red-600 dark:text-red-400'
+              }`}>
               {portfolio ? `₹${(portfolio.dayPnL / 1000).toFixed(1)}K` : '₹0'}
             </p>
           </div>
           <div className="text-center">
             <p className="text-sm text-neutral-600 dark:text-neutral-400">Fill Rate</p>
             <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-              {orders.length > 0 
+              {orders && orders.length > 0
                 ? ((orders.filter(o => o.status === 'FILLED' || o.status === 'PARTIALLY_FILLED').length / orders.length) * 100).toFixed(1)
                 : '0'
               }%
