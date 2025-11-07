@@ -222,10 +222,37 @@ export function useBacktesting(options: GetBacktestsOptions = {}): UseBacktestin
     }
   }, []);
 
-  // Initial data fetch
+  // Initial data fetch - only run once on mount
   useEffect(() => {
-    refreshData();
-  }, []); // Remove refreshData dependency to prevent infinite loops
+    let isMounted = true;
+    
+    const initialLoad = async () => {
+      if (!isMounted) return;
+      
+      console.log('🔄 Initial backtest data load');
+      setLoading(true);
+      try {
+        await Promise.all([
+          fetchBacktests(),
+          fetchStatusCounts(),
+          fetchRunningBacktests()
+        ]);
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    
+    initialLoad();
+    
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - only run once on mount
 
   // Poll for running backtests updates (only when there are running backtests)
   useEffect(() => {
