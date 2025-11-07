@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { tradingAPI, PlaceOrderRequest } from '@/lib/api/trading-api';
 import { tradingWebSocket } from '@/lib/websocket/trading-websocket';
-import { Order, Position, Portfolio, MarketData } from '@/types/trading';
+import { Order, Position, Portfolio } from '@/types/trading';
 import { useToast } from '@/components/ui';
 
 export function useTrading() {

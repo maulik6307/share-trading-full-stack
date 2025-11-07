@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { TrendingUp, TrendingDown, BarChart3, Activity, Settings } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { TrendingUp, TrendingDown, BarChart3, Activity } from 'lucide-react';
 import { useMarketData } from '@/lib/hooks/use-mock-socket';
 import { mockSymbols } from '@/mocks/data/symbols';
 

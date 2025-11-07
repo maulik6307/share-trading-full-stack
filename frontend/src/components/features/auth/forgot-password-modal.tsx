@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, ArrowLeft, CheckCircle, X } from 'lucide-react';
+import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button, Input, Modal } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
 import { modalVariants } from '@/lib/animations';

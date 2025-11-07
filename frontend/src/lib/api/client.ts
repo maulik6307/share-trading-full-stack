@@ -27,7 +27,6 @@ const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
     
     // Always send token if it exists (including demo token)
     if (token) {

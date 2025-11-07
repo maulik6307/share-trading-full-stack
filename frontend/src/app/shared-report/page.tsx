@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Share2, Download, ExternalLink, AlertCircle } from 'lucide-react';
+import { Share2, ExternalLink, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { cn } from '@/lib/utils';

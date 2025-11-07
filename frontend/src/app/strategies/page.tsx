@@ -23,7 +23,6 @@ import { CreateStrategyModal } from '@/components/features/strategies/create-str
 import { useAuthStore } from '@/stores/auth-store';
 import { useStrategies, useStrategyStatusCounts, useStrategyActions } from '@/hooks/use-strategies';
 import { useStrategyTemplates, useTemplateActions } from '@/hooks/use-strategy-templates';
-import { Strategy as APIStrategy, StrategyTemplate as APIStrategyTemplate } from '@/lib/api/strategies';
 import { Strategy, StrategyTemplate } from '@/types/trading';
 import { cn } from '@/lib/utils';
 

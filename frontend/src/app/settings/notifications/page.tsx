@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout';
 import { Button, Label, useToast } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
-import { Bell, Mail, Smartphone, MessageSquare, TrendingUp, AlertTriangle, Settings, Volume2, VolumeX } from 'lucide-react';
+import { Bell, Mail, Smartphone, MessageSquare, TrendingUp, Settings, Volume2, VolumeX } from 'lucide-react';
 
 interface NotificationPreferences {
   email: {

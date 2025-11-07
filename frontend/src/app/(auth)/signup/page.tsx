@@ -12,7 +12,6 @@ import {
   Brain,
   BarChart3,
   Target,
-  CheckCircle,
   Sparkles,
   Check
 } from 'lucide-react';

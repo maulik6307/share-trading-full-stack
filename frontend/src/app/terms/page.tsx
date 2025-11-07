@@ -70,10 +70,10 @@ export default function TermsPage() {
               </h2>
               <div className="bg-gray-50 dark:bg-neutral-900 rounded-2xl p-8 space-y-4">
                 <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                  By accessing and using ShareTrading's services, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
+                  By accessing and using ShareTrading&apos;s services, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
                 </p>
                 <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                  These Terms of Service ("Terms") govern your use of our website located at sharetrading.ai (the "Service") operated by ShareTrading ("us", "we", or "our").
+                  These Terms of Service (&quot;Terms&quot;) govern your use of our website located at sharetrading.ai (the &quot;Service&quot;) operated by ShareTrading (&quot;us&quot;, &quot;we&quot;, or &quot;our&quot;).
                 </p>
               </div>
             </div>
@@ -85,7 +85,7 @@ export default function TermsPage() {
               </h2>
               <div className="bg-gray-50 dark:bg-neutral-900 rounded-2xl p-8 space-y-4">
                 <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                  Permission is granted to temporarily download one copy of the materials on ShareTrading's website for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:
+                  Permission is granted to temporarily download one copy of the materials on ShareTrading&apos;s website for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:
                 </p>
                 <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300 ml-4">
                   <li>modify or copy the materials</li>

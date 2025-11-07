@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Strategy, Alert } from '@/types/trading';
+import { Strategy } from '@/types/trading';
 import { PaperTradingSession, PaperTradingSessionComponent } from './paper-trading-session';
 import { StrategyDeploymentModal, DeploymentConfig } from './strategy-deployment-modal';
 import { Button, Badge, useToast } from '@/components/ui';
-import { Plus, Play, Pause, Square, TrendingUp, AlertTriangle, Clock } from 'lucide-react';
+import { Plus, Play, Square, TrendingUp } from 'lucide-react';
 import { mockStrategies } from '@/mocks/data/strategies';
 
 interface PaperTradingSessionsManagerProps {

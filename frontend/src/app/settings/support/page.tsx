@@ -515,7 +515,7 @@ export default function SupportPage() {
                           {ticket.subject}
                         </h3>
                         <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                          Ticket #{ticket.ticketId} • {ticket.category}
+                          Ticket #{ticket.id} • {ticket.category}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">

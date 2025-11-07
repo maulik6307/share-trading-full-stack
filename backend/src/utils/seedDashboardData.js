@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const Portfolio = require('../models/Portfolio');
 const PortfolioHistory = require('../models/PortfolioHistory');
 const Position = require('../models/Position');

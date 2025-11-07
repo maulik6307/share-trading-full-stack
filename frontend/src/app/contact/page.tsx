@@ -83,7 +83,7 @@ export default function ContactPage() {
               Get in touch
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Have questions about our platform? We're here to help you succeed in your trading journey.
+              Have questions about our platform? We&apos;re here to help you succeed in your trading journey.
             </p>
           </motion.div>
 
@@ -154,7 +154,7 @@ export default function ContactPage() {
                 Send us a message
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mb-8">
-                Fill out the form below and we'll get back to you as soon as possible.
+                Fill out the form below and we&apos;ll get back to you as soon as possible.
               </p>
               
               {submitted && (
@@ -164,7 +164,7 @@ export default function ContactPage() {
                   className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl flex items-center gap-3"
                 >
                   <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  <p className="text-green-800 dark:text-green-200">Message sent successfully! We'll get back to you within 24 hours.</p>
+                  <p className="text-green-800 dark:text-green-200">Message sent successfully! We&apos;ll get back to you within 24 hours.</p>
                 </motion.div>
               )}
 

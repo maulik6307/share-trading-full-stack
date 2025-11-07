@@ -1,6 +1,6 @@
 // MockSocket service for WebSocket-like real-time simulation
 
-import { MarketData, Order, Position, Trade } from '@/types/trading';
+import { Order } from '@/types/trading';
 
 export type MockSocketEvent = 
   | 'market_data'
@@ -343,7 +343,7 @@ export class MockSocket {
   }
 
   private stopAllSimulations(): void {
-    this.simulationIntervals.forEach((interval, key) => {
+    this.simulationIntervals.forEach((interval) => {
       clearInterval(interval);
     });
     this.simulationIntervals.clear();

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Search, Plus, X, TrendingUp, TrendingDown, Bell, BellOff } from 'lucide-react';
 import { Button, Input, Modal } from '@/components/ui';
-import { useMarketData, useSystemAlerts, useMockSocketControls } from '@/lib/hooks/use-mock-socket';
+import { useMarketData, useMockSocketControls } from '@/lib/hooks/use-mock-socket';
 import { mockSymbols } from '@/mocks/data/symbols';
 import { Symbol, MarketData, Watchlist } from '@/types/trading';
 

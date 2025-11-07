@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { MainLayout } from '@/components/layout';
 import { useAuthStore } from '@/stores/auth-store';
-import { useToast, Modal, Button, Input, Select } from '@/components/ui';
+import { useToast, Modal, Button, Input } from '@/components/ui';
 import { OrderEntryForm, OrderBook, OrderHistory, PositionsDashboard, PositionPerformance, MarketWatchlist, PriceTicker, MarketDataChart, PriceAlerts, PaperTradingSessionsManager, PerformanceMonitor, type PaperTradingSession } from '@/components/features/paper-trading';
 import { useTrading } from '@/hooks/use-trading';
 import { useMarketData } from '@/hooks/use-market-data';
@@ -76,11 +76,11 @@ export default function PaperTradingPage() {
     }
   }, [activeOrders]);
 
-  const handleModifyOrderSubmit = useCallback(async (modifications: { price?: number; quantity?: number; stopPrice?: number }) => {
+  const handleModifyOrderSubmit = useCallback(async (mods: { price?: number; quantity?: number; stopPrice?: number }) => {
     if (!modifyOrderModal.order) return;
 
     try {
-      await modifyOrder(modifyOrderModal.order.id, modifications);
+      await modifyOrder(modifyOrderModal.order.id, mods);
       setModifyOrderModal({ isOpen: false, order: null });
     } catch (error) {
       // Error handling is done in the hook

@@ -5,7 +5,7 @@ import { Bell, BellOff, Plus, X, TrendingUp, TrendingDown, AlertTriangle, CheckC
 import { Button, Input, Modal } from '@/components/ui';
 import { useSystemAlerts, useMarketData, useMockSocketControls } from '@/lib/hooks/use-mock-socket';
 import { mockSymbols } from '@/mocks/data/symbols';
-import { Alert, MarketData } from '@/types/trading';
+import { MarketData } from '@/types/trading';
 import { formatSafeDate } from '@/lib/utils/date-transform';
 
 interface PriceAlert {

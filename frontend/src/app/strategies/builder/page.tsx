@@ -8,7 +8,6 @@ import { StrategyBuilder } from '@/components/features/strategies/strategy-build
 import { useAuthStore } from '@/stores/auth-store';
 import { useStrategy, useStrategies, useStrategyActions } from '@/hooks/use-strategies';
 import { Strategy } from '@/types/trading';
-import { Strategy as APIStrategy } from '@/lib/api/strategies';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
 

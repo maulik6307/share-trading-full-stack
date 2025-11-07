@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { motion, useScroll, useTransform, useSpring, useInView } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import CountUp from 'react-countup';
 import {
   TrendingUp,
@@ -11,22 +11,17 @@ import {
   Target,
   Brain,
   ArrowRight,
-  CheckCircle,
   Play,
   Star,
   Users,
   Globe,
-  Award,
   Smartphone,
   Monitor,
   Code,
   PieChart,
   Activity,
   Lock,
-  Headphones,
-  Clock,
   ChevronRight,
-  Quote,
   Sparkles,
   LineChart,
   Layers,
@@ -1008,7 +1003,7 @@ export function EnhancedLandingPage({ onGetStarted }: LandingPageProps) {
               Simple pricing
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-400">
-              Start free, upgrade when you're ready
+              Start free, upgrade when you&apos;re ready
             </p>
           </motion.div>
 

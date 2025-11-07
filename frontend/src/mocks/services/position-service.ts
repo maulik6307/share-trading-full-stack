@@ -1,4 +1,4 @@
-import { Position, Portfolio, MarketData, Order } from '@/types/trading';
+import { Position, Portfolio, MarketData } from '@/types/trading';
 import { mockPositions, mockPortfolio } from '@/mocks/data/positions';
 import { mockMarketData } from '@/mocks/data/symbols';
 

@@ -1,4 +1,4 @@
-import { Strategy, StrategyTemplate, ParameterSchema, StrategyPerformance } from '@/types/trading';
+import { Strategy, StrategyTemplate } from '@/types/trading';
 
 export const mockStrategyTemplates: StrategyTemplate[] = [
   {

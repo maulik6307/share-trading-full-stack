@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout';
 import { Button, useToast } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
-import { CreditCard, Download, Calendar, DollarSign, CheckCircle, AlertTriangle, Clock, Zap } from 'lucide-react';
+import { CreditCard, Download, Calendar, CheckCircle, AlertTriangle, Clock, Zap } from 'lucide-react';
 
 interface BillingInfo {
   plan: {
@@ -177,7 +177,7 @@ export default function BillingPage() {
     }
   };
 
-  const handleDownloadInvoice = (invoiceId: string) => {
+  const handleDownloadInvoice = () => {
     addToast({
       type: 'info',
       title: 'Download Started',
@@ -541,7 +541,7 @@ export default function BillingPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDownloadInvoice(invoice.id)}
+                      onClick={handleDownloadInvoice}
                     >
                       <Download className="w-4 h-4 mr-2" />
                       Download

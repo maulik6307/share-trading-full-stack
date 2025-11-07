@@ -14,7 +14,6 @@ export default function SettingsTestPage() {
     updateProfile,
     updateSecuritySettings,
     enable2FA,
-    disable2FA,
     updateNotificationPreferences,
     upgradePlan,
     createSupportTicket,
@@ -365,7 +364,7 @@ export default function SettingsTestPage() {
           
           <div className="bg-neutral-900 text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
             {testResults.length === 0 ? (
-              <div className="text-neutral-500">No tests run yet. Click "Run All Tests" to start.</div>
+              <div className="text-neutral-500">No tests run yet. Click &quot;Run All Tests&quot; to start.</div>
             ) : (
               testResults.map((result, index) => (
                 <div key={index} className="mb-1">

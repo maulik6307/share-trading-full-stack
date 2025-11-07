@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { 
   Download, 
   FileText, 
-  Image, 
   Share2, 
   Copy, 
   Check,
@@ -12,7 +11,7 @@ import {
   FileSpreadsheet,
   FileImage
 } from 'lucide-react';
-import { Modal, Button, Select, Input } from '@/components/ui';
+import { Modal, Button, Input } from '@/components/ui';
 import { useToast } from '@/components/ui';
 import { BacktestResult, Strategy } from '@/types/trading';
 import { 

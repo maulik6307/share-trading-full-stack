@@ -6,8 +6,7 @@ import {
   TrendingDown, 
   DollarSign, 
   AlertCircle,
-  Calculator,
-  Clock
+  Calculator
 } from 'lucide-react';
 import { Button, Input, Select, Modal } from '@/components/ui';
 import { useToast } from '@/components/ui';

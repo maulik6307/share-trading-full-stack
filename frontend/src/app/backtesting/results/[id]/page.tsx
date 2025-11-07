@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Download, Share2, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowLeft, Download, TrendingUp, TrendingDown } from 'lucide-react';
 import { MainLayout } from '@/components/layout';
 import { Button } from '@/components/ui';
 import { 

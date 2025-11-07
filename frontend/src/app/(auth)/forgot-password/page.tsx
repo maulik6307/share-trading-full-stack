@@ -86,7 +86,7 @@ export default function ForgotPasswordPage() {
                                     Forgot password?
                                 </h1>
                                 <p className="text-lg text-gray-600 dark:text-gray-400">
-                                    No worries, we'll send you reset instructions
+                                    No worries, we&apos;ll send you reset instructions
                                 </p>
                             </div>
 
@@ -159,7 +159,7 @@ export default function ForgotPasswordPage() {
                                         <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                                         <div className="text-left">
                                             <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                                                Didn't receive the email?
+                                                Didn&apos;t receive the email?
                                             </p>
                                             <p className="text-sm text-gray-600 dark:text-gray-400">
                                                 Check your spam folder or{' '}
@@ -219,7 +219,7 @@ export default function ForgotPasswordPage() {
                         </h2>
 
                         <p className="text-xl text-blue-100 mb-12 max-w-lg">
-                            We'll help you reset your password and get back to trading in no time.
+                            We&apos;ll help you reset your password and get back to trading in no time.
                         </p>
 
                         <div className="space-y-4">

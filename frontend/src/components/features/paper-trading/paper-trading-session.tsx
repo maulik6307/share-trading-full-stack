@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Strategy, Order, Position, Alert } from '@/types/trading';
+import { Strategy, Alert } from '@/types/trading';
 import { DeploymentConfig } from './strategy-deployment-modal';
 import { Button, Badge, useToast } from '@/components/ui';
-import { Play, Pause, Square, TrendingUp, TrendingDown, AlertTriangle, Clock, DollarSign } from 'lucide-react';
+import { Play, Pause, Square, TrendingUp, AlertTriangle } from 'lucide-react';
 import { mockOrderService } from '@/mocks/services/order-service';
 import { mockPositionService } from '@/mocks/services/position-service';
 import { formatSafeDate } from '@/lib/utils/date-transform';
