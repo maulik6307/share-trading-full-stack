@@ -9,6 +9,17 @@ const { validationResult } = require('express-validator');
 exports.getDashboard = async (req, res) => {
   try {
     const userId = req.user.id;
+    
+    // Handle demo user
+    if (userId === 'demo-user-1') {
+      const demoDashboardData = getDemoDashboardData();
+      return res.status(200).json({
+        success: true,
+        data: demoDashboardData,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     const {
       includePerformance = 'true',
       includeActivities = 'true',
@@ -51,6 +62,16 @@ exports.getKPIData = async (req, res) => {
   try {
     const userId = req.user.id;
     
+    // Handle demo user
+    if (userId === 'demo-user-1') {
+      const demoData = getDemoDashboardData();
+      return res.status(200).json({
+        success: true,
+        data: demoData.kpi,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     const portfolio = await dashboardService.getUserMainPortfolio(userId);
     if (!portfolio) {
       return res.status(404).json({
@@ -83,6 +104,16 @@ exports.getPerformanceData = async (req, res) => {
   try {
     const userId = req.user.id;
     const { days = '30' } = req.query;
+    
+    // Handle demo user
+    if (userId === 'demo-user-1') {
+      const demoData = getDemoDashboardData();
+      return res.status(200).json({
+        success: true,
+        data: demoData.performance,
+        timestamp: new Date().toISOString()
+      });
+    }
     
     const portfolio = await dashboardService.getUserMainPortfolio(userId);
     if (!portfolio) {
@@ -125,6 +156,22 @@ exports.getActivities = async (req, res) => {
       type,
       status 
     } = req.query;
+
+    // Handle demo user
+    if (userId === 'demo-user-1') {
+      const demoData = getDemoDashboardData();
+      return res.status(200).json({
+        success: true,
+        data: demoData.activities,
+        pagination: {
+          total: demoData.activities.length,
+          limit: parseInt(limit),
+          offset: parseInt(offset),
+          hasMore: false
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
 
     const query = { userId };
     if (type) query.type = type;
@@ -174,6 +221,27 @@ exports.getAlerts = async (req, res) => {
       priority,
       unreadOnly = 'false'
     } = req.query;
+
+    // Handle demo user
+    if (userId === 'demo-user-1') {
+      const demoData = getDemoDashboardData();
+      const unreadCount = demoData.alerts.filter(a => !a.isRead).length;
+      
+      return res.status(200).json({
+        success: true,
+        data: demoData.alerts,
+        meta: {
+          unreadCount
+        },
+        pagination: {
+          total: demoData.alerts.length,
+          limit: parseInt(limit),
+          offset: parseInt(offset),
+          hasMore: false
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
 
     const query = { 
       userId,
@@ -326,5 +394,138 @@ exports.getStats = async (req, res) => {
     });
   }
 };
+
+// Helper function to generate demo dashboard data
+function getDemoDashboardData() {
+  const today = new Date();
+  const performanceData = [];
+  
+  // Generate 30 days of performance data
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const baseValue = 100000;
+    const randomVariation = Math.sin(i / 5) * 5000 + Math.random() * 2000;
+    
+    performanceData.push({
+      date: date.toISOString().split('T')[0],
+      value: Math.round(baseValue + randomVariation + (i * 100)),
+      benchmark: Math.round(baseValue + randomVariation * 0.8 + (i * 80))
+    });
+  }
+  
+  return {
+    portfolio: {
+      id: 'demo-portfolio-1',
+      name: 'Demo Portfolio',
+      totalValue: 103500,
+      currency: 'INR',
+      lastUpdated: new Date()
+    },
+    kpi: {
+      portfolioValue: {
+        current: 103500,
+        change: { value: 2.5, period: 'today', isPositive: true }
+      },
+      roi30d: {
+        current: 3.5,
+        change: { value: 0.8, period: 'vs last month', isPositive: true }
+      },
+      activeStrategies: {
+        current: 3,
+        profitable: 2,
+        description: '2 profitable'
+      },
+      openPositions: {
+        current: 5,
+        profitable: 3,
+        description: '3 in profit'
+      },
+      totalReturn: {
+        current: 3500,
+        change: { value: 3.5, period: 'all time', isPositive: true }
+      },
+      winRate: {
+        current: 65.5,
+        change: { value: 2.1, period: '30d avg', isPositive: true }
+      }
+    },
+    performance: performanceData,
+    activities: [
+      {
+        _id: 'activity-1',
+        type: 'trade',
+        action: 'BUY',
+        symbol: 'RELIANCE',
+        quantity: 10,
+        price: 2450.50,
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        status: 'completed',
+        description: 'Bought 10 shares of RELIANCE at ₹2,450.50'
+      },
+      {
+        _id: 'activity-2',
+        type: 'trade',
+        action: 'SELL',
+        symbol: 'TCS',
+        quantity: 5,
+        price: 3650.00,
+        timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
+        status: 'completed',
+        description: 'Sold 5 shares of TCS at ₹3,650.00'
+      },
+      {
+        _id: 'activity-3',
+        type: 'strategy',
+        action: 'STARTED',
+        strategyName: 'Moving Average Crossover',
+        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        status: 'active',
+        description: 'Started strategy: Moving Average Crossover'
+      },
+      {
+        _id: 'activity-4',
+        type: 'backtest',
+        action: 'COMPLETED',
+        strategyName: 'RSI Momentum',
+        timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000),
+        status: 'completed',
+        description: 'Backtest completed for RSI Momentum strategy'
+      }
+    ],
+    alerts: [
+      {
+        _id: 'alert-1',
+        type: 'price',
+        priority: 'high',
+        title: 'Price Alert: INFY',
+        message: 'INFY has reached your target price of ₹1,500',
+        timestamp: new Date(Date.now() - 30 * 60 * 1000),
+        isRead: false,
+        isDismissed: false
+      },
+      {
+        _id: 'alert-2',
+        type: 'risk',
+        priority: 'medium',
+        title: 'Risk Alert',
+        message: 'Portfolio exposure to IT sector exceeds 40%',
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        isRead: false,
+        isDismissed: false
+      },
+      {
+        _id: 'alert-3',
+        type: 'strategy',
+        priority: 'low',
+        title: 'Strategy Update',
+        message: 'Moving Average Crossover generated a new signal',
+        timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
+        isRead: true,
+        isDismissed: false
+      }
+    ]
+  };
+}
 
 module.exports = exports;

@@ -15,6 +15,8 @@ const dashboardRoutes = require('./routes/dashboard');
 const tradingRoutes = require('./routes/trading');
 const strategyRoutes = require('./routes/strategy');
 const backtestRoutes = require('./routes/backtest');
+const settingsRoutes = require('./routes/settings');
+const supportRoutes = require('./routes/support');
 
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -92,6 +94,8 @@ app.use(`${apiPrefix}/${apiVersion}/dashboard`, dashboardRoutes);
 app.use(`${apiPrefix}/${apiVersion}/trading`, tradingRoutes);
 app.use(`${apiPrefix}/${apiVersion}/strategies`, strategyRoutes);
 app.use(`${apiPrefix}/${apiVersion}/backtests`, backtestRoutes);
+app.use(`${apiPrefix}/${apiVersion}/settings`, settingsRoutes);
+app.use(`${apiPrefix}/${apiVersion}/support`, supportRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {

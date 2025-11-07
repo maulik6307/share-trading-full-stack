@@ -94,8 +94,8 @@ export function LeftRail({ className }: LeftRailProps) {
             <button
               onClick={() => toggleExpanded(item.id)}
               className={cn(
-                'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                'hover:bg-neutral-100 dark:hover:bg-neutral-800',
+                'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm  justify-center font-medium transition-colors',
+                'hover:bg-neutral-100 dark:hover:bg-neutral-800 justify-center',
                 isActive && 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400',
                 !isActive && 'text-neutral-700 dark:text-neutral-300'
               )}
@@ -118,7 +118,7 @@ export function LeftRail({ className }: LeftRailProps) {
               href={item.href}
               data-tour={`${item.id}-nav`}
               className={cn(
-                'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium justify-center transition-colors',
                 'hover:bg-neutral-100 dark:hover:bg-neutral-800',
                 isActive && 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400',
                 !isActive && 'text-neutral-700 dark:text-neutral-300'

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout';
 import { Button, useToast } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
@@ -42,7 +42,7 @@ interface BillingInfo {
 export default function BillingPage() {
   const { user } = useAuthStore();
   const { addToast } = useToast();
-  const [billingInfo] = useState<BillingInfo>({
+  const [billingInfo, setBillingInfo] = useState<BillingInfo>({
     plan: {
       name: 'Free Trial',
       price: 0,
@@ -75,6 +75,32 @@ export default function BillingPage() {
     },
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  // Load billing information on component mount
+  React.useEffect(() => {
+    const loadBillingInfo = async () => {
+      try {
+        const { billingAPI } = await import('@/lib/api/settings');
+        const response = await billingAPI.getBillingInfo();
+        
+        if (response.data) {
+          setBillingInfo(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to load billing information:', error);
+        addToast({
+          type: 'error',
+          title: 'Load Failed',
+          description: 'Failed to load billing information. Using defaults.',
+        });
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    loadBillingInfo();
+  }, []); // Empty dependency array - only run once on mount
 
   const plans = [
     {
@@ -131,19 +157,20 @@ export default function BillingPage() {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const { billingAPI } = await import('@/lib/api/settings');
+      
+      await billingAPI.upgradePlan(planName);
       
       addToast({
         type: 'success',
         title: 'Upgrade Initiated',
         description: `Upgrade to ${planName} plan has been initiated. You will receive a confirmation email shortly.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       addToast({
         type: 'error',
         title: 'Upgrade Failed',
-        description: 'Failed to initiate upgrade. Please try again.',
+        description: error.response?.data?.message || 'Failed to initiate upgrade. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -176,6 +203,19 @@ export default function BillingPage() {
 
   if (!user) {
     return null;
+  }
+
+  if (isLoadingData) {
+    return (
+      <MainLayout user={user}>
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <span className="ml-3 text-neutral-600 dark:text-neutral-400">Loading billing information...</span>
+          </div>
+        </div>
+      </MainLayout>
+    );
   }
 
   const getStatusColor = (status: string) => {

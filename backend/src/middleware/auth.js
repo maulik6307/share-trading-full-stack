@@ -23,6 +23,21 @@ exports.protect = async (req, res, next) => {
   }
 
   try {
+    // Handle demo token
+    if (token === 'demo-token-valid') {
+      // Create a mock user for demo mode
+      req.user = {
+        id: 'demo-user-1',
+        name: 'Demo User',
+        email: 'demo@example.com',
+        username: 'demo_user',
+        role: 'user',
+        isActive: true,
+        isVerified: true
+      };
+      return next();
+    }
+
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 

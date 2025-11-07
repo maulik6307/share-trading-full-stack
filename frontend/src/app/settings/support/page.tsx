@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout';
 import { Button, Input, Label, useToast } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
@@ -29,26 +29,29 @@ export default function SupportPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const mockTickets: SupportTicket[] = [
-    {
-      id: 'TKT-001',
-      subject: 'Unable to deploy strategy to paper trading',
-      status: 'in-progress',
-      priority: 'medium',
-      createdAt: new Date('2024-01-20'),
-      lastUpdated: new Date('2024-01-21'),
-      category: 'Technical',
-    },
-    {
-      id: 'TKT-002',
-      subject: 'Backtest results seem incorrect',
-      status: 'resolved',
-      priority: 'high',
-      createdAt: new Date('2024-01-15'),
-      lastUpdated: new Date('2024-01-18'),
-      category: 'Bug Report',
-    },
-  ];
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+
+  // Load user tickets
+  const loadTickets = async () => {
+    setTicketsLoading(true);
+    try {
+      const { supportAPI } = await import('@/lib/api/support');
+      const response = await supportAPI.getTickets();
+      setTickets(response.data.tickets || []);
+    } catch (error) {
+      console.error('Failed to load tickets:', error);
+    } finally {
+      setTicketsLoading(false);
+    }
+  };
+
+  // Load tickets when switching to tickets tab
+  React.useEffect(() => {
+    if (activeTab === 'tickets') {
+      loadTickets();
+    }
+  }, [activeTab]);
 
   const faqItems = [
     {
@@ -109,8 +112,14 @@ export default function SupportPage() {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const { supportAPI } = await import('@/lib/api/support');
+      
+      await supportAPI.createTicket({
+        subject: contactForm.subject,
+        message: contactForm.message,
+        category: contactForm.category as any,
+        priority: contactForm.priority as any,
+      });
       
       addToast({
         type: 'success',
@@ -124,11 +133,16 @@ export default function SupportPage() {
         priority: 'medium',
         message: '',
       });
-    } catch (error) {
+
+      // Reload tickets if we're on the tickets tab
+      if (activeTab === 'tickets') {
+        loadTickets();
+      }
+    } catch (error: any) {
       addToast({
         type: 'error',
         title: 'Submission Failed',
-        description: 'Failed to submit your request. Please try again.',
+        description: error.response?.data?.message || 'Failed to submit your request. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -470,7 +484,12 @@ export default function SupportPage() {
               </Button>
             </div>
 
-            {mockTickets.length === 0 ? (
+            {ticketsLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+                <p className="text-neutral-600 dark:text-neutral-400 mt-2">Loading tickets...</p>
+              </div>
+            ) : tickets.length === 0 ? (
               <div className="text-center py-12">
                 <MessageSquare className="w-12 h-12 text-neutral-400 mx-auto mb-3" />
                 <h3 className="text-lg font-medium text-neutral-900 dark:text-white mb-2">
@@ -485,7 +504,7 @@ export default function SupportPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {mockTickets.map((ticket) => (
+                {tickets.map((ticket) => (
                   <div
                     key={ticket.id}
                     className="p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
@@ -496,7 +515,7 @@ export default function SupportPage() {
                           {ticket.subject}
                         </h3>
                         <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                          Ticket #{ticket.id} • {ticket.category}
+                          Ticket #{ticket.ticketId} • {ticket.category}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -510,8 +529,8 @@ export default function SupportPage() {
                     </div>
                     
                     <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
-                      <span>Created: {ticket.createdAt.toLocaleDateString()}</span>
-                      <span>Last updated: {ticket.lastUpdated.toLocaleDateString()}</span>
+                      <span>Created: {new Date(ticket.createdAt).toLocaleDateString()}</span>
+                      <span>Last updated: {new Date(ticket.lastUpdated || ticket.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
                 ))}

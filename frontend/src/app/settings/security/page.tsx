@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MainLayout } from '@/components/layout';
 import { Button, Input, Label, useToast } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
@@ -69,11 +69,37 @@ export default function SecurityPage() {
     confirm: false,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [activeTab, setActiveTab] = useState<'password' | 'twoFactor' | 'sessions' | 'privacy'>('password');
+
+  // Load security settings on component mount
+  useEffect(() => {
+    const loadSecuritySettings = async () => {
+      try {
+        const { securityAPI } = await import('@/lib/api/settings');
+        const response = await securityAPI.getSettings();
+
+        if (response.data) {
+          setSettings(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to load security settings:', error);
+        addToast({
+          type: 'error',
+          title: 'Load Failed',
+          description: 'Failed to load security settings. Using defaults.',
+        });
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    loadSecuritySettings();
+  }, []); // Empty dependency array - only run once on mount
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       addToast({
         type: 'error',
@@ -82,7 +108,7 @@ export default function SecurityPage() {
       });
       return;
     }
-    
+
     if (passwordForm.newPassword.length < 8) {
       addToast({
         type: 'error',
@@ -91,19 +117,19 @@ export default function SecurityPage() {
       });
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       addToast({
         type: 'success',
         title: 'Password Updated',
         description: 'Your password has been successfully changed.',
       });
-      
+
       setPasswordForm({
         currentPassword: '',
         newPassword: '',
@@ -122,34 +148,36 @@ export default function SecurityPage() {
 
   const handleEnable2FA = async () => {
     setIsLoading(true);
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const backupCodes = Array.from({ length: 8 }, () => 
-        Math.random().toString(36).substring(2, 8).toUpperCase()
-      );
-      
+      const { securityAPI } = await import('@/lib/api/settings');
+
+      const response = await securityAPI.enable2FA(settings.twoFactorAuth.method);
+
+      // Backend returns: { success: true, data: { backupCodes: [...], qrCodeUrl?: string } }
+      const backupCodes = response.data?.backupCodes || [];
+      const qrCodeUrl = response.data?.qrCodeUrl;
+
       setSettings(prev => ({
         ...prev,
         twoFactorAuth: {
           ...prev.twoFactorAuth,
           enabled: true,
-          backupCodes,
+          backupCodes: backupCodes,
+          qrCodeUrl: qrCodeUrl,
         },
       }));
-      
+
       addToast({
         type: 'success',
         title: '2FA Enabled',
         description: 'Two-factor authentication has been successfully enabled.',
       });
-    } catch (error) {
+    } catch (error: any) {
       addToast({
         type: 'error',
         title: '2FA Setup Failed',
-        description: 'Failed to enable two-factor authentication. Please try again.',
+        description: error.response?.data?.message || 'Failed to enable two-factor authentication. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -157,12 +185,17 @@ export default function SecurityPage() {
   };
 
   const handleDisable2FA = async () => {
+    // First, prompt for password
+    const password = prompt('Please enter your current password to disable 2FA:');
+    if (!password) return;
+
     setIsLoading(true);
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const { securityAPI } = await import('@/lib/api/settings');
+
+      await securityAPI.disable2FA(password);
+
       setSettings(prev => ({
         ...prev,
         twoFactorAuth: {
@@ -171,17 +204,17 @@ export default function SecurityPage() {
           backupCodes: [],
         },
       }));
-      
+
       addToast({
         type: 'success',
         title: '2FA Disabled',
         description: 'Two-factor authentication has been disabled.',
       });
-    } catch (error) {
+    } catch (error: any) {
       addToast({
         type: 'error',
         title: '2FA Disable Failed',
-        description: 'Failed to disable two-factor authentication. Please try again.',
+        description: error.response?.data?.message || 'Failed to disable two-factor authentication. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -190,21 +223,26 @@ export default function SecurityPage() {
 
   const handleSaveSettings = async () => {
     setIsLoading(true);
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const { securityAPI } = await import('@/lib/api/settings');
+
+      await securityAPI.updateSettings({
+        loginAlerts: settings.loginAlerts,
+        sessionManagement: settings.sessionManagement,
+        privacy: settings.privacy,
+      });
+
       addToast({
         type: 'success',
         title: 'Settings Saved',
         description: 'Your security settings have been updated.',
       });
-    } catch (error) {
+    } catch (error: any) {
       addToast({
         type: 'error',
         title: 'Save Failed',
-        description: 'Failed to save security settings. Please try again.',
+        description: error.response?.data?.message || 'Failed to save security settings. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -262,6 +300,19 @@ export default function SecurityPage() {
     },
   ];
 
+  if (isLoadingData) {
+    return (
+      <MainLayout user={user}>
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <span className="ml-3 text-neutral-600 dark:text-neutral-400">Loading security settings...</span>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout user={user}>
       <div className="max-w-4xl mx-auto space-y-6">
@@ -286,11 +337,10 @@ export default function SecurityPage() {
               <button
                 key={id}
                 onClick={() => setActiveTab(id as any)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                  activeTab === id
-                    ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
-                }`}
+                className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${activeTab === id
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {label}
@@ -313,7 +363,7 @@ export default function SecurityPage() {
                 </p>
               </div>
             </div>
-            
+
             <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
               <div>
                 <Label htmlFor="currentPassword">Current Password</Label>
@@ -335,7 +385,7 @@ export default function SecurityPage() {
                   </button>
                 </div>
               </div>
-              
+
               <div>
                 <Label htmlFor="newPassword">New Password</Label>
                 <div className="relative">
@@ -356,7 +406,7 @@ export default function SecurityPage() {
                   </button>
                 </div>
               </div>
-              
+
               <div>
                 <Label htmlFor="confirmPassword">Confirm New Password</Label>
                 <div className="relative">
@@ -377,7 +427,7 @@ export default function SecurityPage() {
                   </button>
                 </div>
               </div>
-              
+
               <div className="pt-4">
                 <Button
                   type="submit"
@@ -388,7 +438,7 @@ export default function SecurityPage() {
                 </Button>
               </div>
             </form>
-            
+
             {/* Password Requirements */}
             <div className="mt-6 p-4 bg-neutral-50 dark:bg-neutral-900 rounded-lg">
               <h4 className="text-sm font-medium text-neutral-900 dark:text-white mb-2">
@@ -426,22 +476,21 @@ export default function SecurityPage() {
                   ) : (
                     <AlertTriangle className="w-5 h-5 text-yellow-500" />
                   )}
-                  <span className={`text-sm font-medium ${
-                    settings.twoFactorAuth.enabled 
-                      ? 'text-green-600 dark:text-green-400' 
-                      : 'text-yellow-600 dark:text-yellow-400'
-                  }`}>
+                  <span className={`text-sm font-medium ${settings.twoFactorAuth.enabled
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-yellow-600 dark:text-yellow-400'
+                    }`}>
                     {settings.twoFactorAuth.enabled ? 'Enabled' : 'Disabled'}
                   </span>
                 </div>
               </div>
-              
+
               {!settings.twoFactorAuth.enabled ? (
                 <div className="space-y-4">
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
                     Two-factor authentication adds an extra layer of security by requiring a second form of verification when signing in.
                   </p>
-                  
+
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 p-3 border border-neutral-200 dark:border-neutral-700 rounded-lg">
                       <Smartphone className="w-5 h-5 text-primary-600 dark:text-primary-400" />
@@ -462,7 +511,7 @@ export default function SecurityPage() {
                         className="text-primary-600"
                       />
                     </div>
-                    
+
                     <div className="flex items-center gap-3 p-3 border border-neutral-200 dark:border-neutral-700 rounded-lg">
                       <Key className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                       <div className="flex-1">
@@ -483,7 +532,7 @@ export default function SecurityPage() {
                       />
                     </div>
                   </div>
-                  
+
                   <Button
                     onClick={handleEnable2FA}
                     loading={isLoading}
@@ -516,7 +565,7 @@ export default function SecurityPage() {
                       Disable
                     </Button>
                   </div>
-                  
+
                   {settings.twoFactorAuth.backupCodes.length > 0 && (
                     <div className="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-lg">
                       <h4 className="text-sm font-medium text-neutral-900 dark:text-white mb-2">
@@ -537,7 +586,7 @@ export default function SecurityPage() {
                 </div>
               )}
             </div>
-            
+
             {/* Login Alerts */}
             <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-6">
               <div className="flex items-center gap-3 mb-4">
@@ -551,7 +600,7 @@ export default function SecurityPage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
@@ -565,7 +614,7 @@ export default function SecurityPage() {
                     onChange={(checked) => updateSetting('loginAlerts', 'enabled', checked)}
                   />
                 </div>
-                
+
                 <div className="ml-6 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
@@ -580,7 +629,7 @@ export default function SecurityPage() {
                       disabled={!settings.loginAlerts.enabled}
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>New Location Login</Label>
@@ -594,7 +643,7 @@ export default function SecurityPage() {
                       disabled={!settings.loginAlerts.enabled}
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>Failed Login Attempts</Label>
@@ -643,16 +692,15 @@ export default function SecurityPage() {
                   Terminate All Others
                 </Button>
               </div>
-              
+
               <div className="space-y-3">
                 {mockSessions.map((session) => (
                   <div
                     key={session.id}
-                    className={`p-4 border rounded-lg ${
-                      session.current
-                        ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
-                        : 'border-neutral-200 dark:border-neutral-700'
-                    }`}
+                    className={`p-4 border rounded-lg ${session.current
+                      ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
+                      : 'border-neutral-200 dark:border-neutral-700'
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -678,7 +726,7 @@ export default function SecurityPage() {
                           </div>
                         </div>
                       </div>
-                      
+
                       {!session.current && (
                         <Button
                           variant="outline"
@@ -699,7 +747,7 @@ export default function SecurityPage() {
                 ))}
               </div>
             </div>
-            
+
             {/* Session Management Settings */}
             <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-6">
               <div className="flex items-center gap-3 mb-4">
@@ -713,7 +761,7 @@ export default function SecurityPage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -727,7 +775,7 @@ export default function SecurityPage() {
                     onChange={(checked) => updateSetting('sessionManagement', 'autoLogout', checked)}
                   />
                 </div>
-                
+
                 {settings.sessionManagement.autoLogout && (
                   <div className="ml-6">
                     <Label htmlFor="timeoutMinutes">Timeout (minutes)</Label>
@@ -745,7 +793,7 @@ export default function SecurityPage() {
                     </select>
                   </div>
                 )}
-                
+
                 <div>
                   <Label htmlFor="maxSessions">Maximum Concurrent Sessions</Label>
                   <select
@@ -782,7 +830,7 @@ export default function SecurityPage() {
                 </p>
               </div>
             </div>
-            
+
             <div className="space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -801,7 +849,7 @@ export default function SecurityPage() {
                     <option value="private">Private</option>
                   </select>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Activity Tracking</Label>
@@ -814,7 +862,7 @@ export default function SecurityPage() {
                     onChange={(checked) => updateSetting('privacy', 'activityTracking', checked)}
                   />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Data Sharing</Label>
@@ -827,7 +875,7 @@ export default function SecurityPage() {
                     onChange={(checked) => updateSetting('privacy', 'dataSharing', checked)}
                   />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Marketing Communications</Label>
@@ -841,7 +889,7 @@ export default function SecurityPage() {
                   />
                 </div>
               </div>
-              
+
               {/* Data Export/Delete */}
               <div className="pt-6 border-t border-neutral-200 dark:border-neutral-700">
                 <h4 className="text-sm font-medium text-neutral-900 dark:text-white mb-4">

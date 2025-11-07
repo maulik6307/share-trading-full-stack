@@ -85,7 +85,7 @@ const userSchema = new mongoose.Schema({
     defaultCurrency: {
       type: String,
       default: 'USD',
-      enum: ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD']
+      enum: ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'AUD']
     },
     riskTolerance: {
       type: String,
@@ -106,11 +106,103 @@ const userSchema = new mongoose.Schema({
     }
   },
 
+  // User Preferences
+  preferences: {
+    theme: {
+      type: String,
+      enum: ['light', 'dark'],
+      default: 'light'
+    },
+    dateFormat: {
+      type: String,
+      default: 'DD/MM/YYYY',
+      enum: ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD', 'DD-MM-YYYY']
+    }
+  },
+
   // Security
   twoFactorAuth: {
     enabled: { type: Boolean, default: false },
+    method: {
+      type: String,
+      enum: ['app', 'sms', 'email'],
+      default: 'app'
+    },
     secret: { type: String, select: false },
     backupCodes: [{ type: String, select: false }]
+  },
+  
+  // Security Settings
+  securitySettings: {
+    loginAlerts: {
+      enabled: { type: Boolean, default: true },
+      newDevice: { type: Boolean, default: true },
+      newLocation: { type: Boolean, default: true },
+      failedAttempts: { type: Boolean, default: true }
+    },
+    sessionManagement: {
+      autoLogout: { type: Boolean, default: true },
+      timeoutMinutes: { type: Number, default: 30 },
+      maxSessions: { type: Number, default: 3 }
+    },
+    privacy: {
+      profileVisibility: {
+        type: String,
+        enum: ['public', 'private'],
+        default: 'private'
+      },
+      activityTracking: { type: Boolean, default: false },
+      dataSharing: { type: Boolean, default: false },
+      marketingConsent: { type: Boolean, default: false }
+    }
+  },
+
+  // Notification Preferences
+  notificationPreferences: {
+    email: {
+      enabled: { type: Boolean, default: true },
+      trading: { type: Boolean, default: true },
+      system: { type: Boolean, default: true },
+      marketing: { type: Boolean, default: false },
+      security: { type: Boolean, default: true }
+    },
+    push: {
+      enabled: { type: Boolean, default: true },
+      trading: { type: Boolean, default: true },
+      system: { type: Boolean, default: true },
+      alerts: { type: Boolean, default: true },
+      news: { type: Boolean, default: false }
+    },
+    sms: {
+      enabled: { type: Boolean, default: false },
+      security: { type: Boolean, default: true },
+      critical: { type: Boolean, default: true }
+    },
+    inApp: {
+      enabled: { type: Boolean, default: true },
+      sound: { type: Boolean, default: true },
+      desktop: { type: Boolean, default: true },
+      trading: { type: Boolean, default: true },
+      system: { type: Boolean, default: true }
+    },
+    trading: {
+      orderFills: { type: Boolean, default: true },
+      positionUpdates: { type: Boolean, default: true },
+      riskAlerts: { type: Boolean, default: true },
+      priceAlerts: { type: Boolean, default: true },
+      strategyUpdates: { type: Boolean, default: true },
+      backtestComplete: { type: Boolean, default: true }
+    },
+    frequency: {
+      immediate: { type: Boolean, default: true },
+      digest: { type: Boolean, default: false },
+      digestTime: { type: String, default: '09:00' },
+      quietHours: {
+        enabled: { type: Boolean, default: false },
+        start: { type: String, default: '22:00' },
+        end: { type: String, default: '08:00' }
+      }
+    }
   },
   loginAttempts: {
     type: Number,
@@ -141,12 +233,56 @@ const userSchema = new mongoose.Schema({
     },
     status: {
       type: String,
-      enum: ['active', 'inactive', 'cancelled', 'expired'],
-      default: 'active'
+      enum: ['active', 'inactive', 'cancelled', 'expired', 'trial'],
+      default: 'trial'
     },
     startDate: Date,
     endDate: Date,
     autoRenew: { type: Boolean, default: true }
+  },
+
+  // Billing Information
+  billingInfo: {
+    paymentMethod: {
+      type: {
+        type: String,
+        enum: ['card', 'bank']
+      },
+      last4: String,
+      brand: String,
+      expiryMonth: Number,
+      expiryYear: Number
+    },
+    history: [{
+      id: String,
+      date: { type: Date, default: Date.now },
+      amount: Number,
+      status: {
+        type: String,
+        enum: ['paid', 'pending', 'failed'],
+        default: 'pending'
+      },
+      description: String,
+      invoiceUrl: String
+    }],
+    usage: {
+      backtests: {
+        used: { type: Number, default: 0 },
+        limit: { type: Number, default: 5 }
+      },
+      strategies: {
+        used: { type: Number, default: 0 },
+        limit: { type: Number, default: 3 }
+      },
+      paperTrades: {
+        used: { type: Number, default: 0 },
+        limit: { type: Number, default: 1 }
+      },
+      dataFeeds: {
+        used: { type: Number, default: 0 },
+        limit: { type: Number, default: 1 }
+      }
+    }
   },
 
   // API Access

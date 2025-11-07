@@ -28,12 +28,12 @@ export function Footer() {
     support: [
       { name: 'Help Center', href: '/settings/support' },
       { name: 'Community', href: '#community' },
-      { name: 'Contact Us', href: '#contact' },
+      { name: 'Contact Us', href: '/contact' },
       { name: 'Status', href: '#status' },
     ],
     legal: [
-      { name: 'Privacy Policy', href: '#privacy' },
-      { name: 'Terms of Service', href: '#terms' },
+      { name: 'Privacy Policy', href: '/privacy' },
+      { name: 'Terms of Service', href: '/terms' },
       { name: 'Cookie Policy', href: '#cookies' },
       { name: 'Security', href: '#security' },
     ],

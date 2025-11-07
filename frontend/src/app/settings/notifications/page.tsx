@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout';
 import { Button, Label, useToast } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
@@ -103,14 +103,50 @@ export default function NotificationsPage() {
     },
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [activeTab, setActiveTab] = useState<'channels' | 'trading' | 'frequency'>('channels');
+
+  // Load notification preferences on component mount
+  React.useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const { notificationsAPI } = await import('@/lib/api/settings');
+        const { demoStorage } = await import('@/lib/demo-storage');
+        const response = await notificationsAPI.getPreferences();
+        
+        if (response.data?.preferences) {
+          // For demo users, merge with stored preferences
+          const finalPreferences = demoStorage.mergeWithStored('notifications', response.data.preferences);
+          setPreferences(finalPreferences);
+        }
+      } catch (error) {
+        console.error('Failed to load notification preferences:', error);
+        addToast({
+          type: 'error',
+          title: 'Load Failed',
+          description: 'Failed to load notification preferences. Using defaults.',
+        });
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    loadPreferences();
+  }, []); // Empty dependency array - only run once on mount
 
   const handleSave = async () => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { notificationsAPI } = await import('@/lib/api/settings');
+      const { demoStorage } = await import('@/lib/demo-storage');
+      
+      await notificationsAPI.updatePreferences(preferences);
+      
+      // For demo users, store preferences in localStorage
+      if (demoStorage.isDemoUser()) {
+        demoStorage.updateSettings('notifications', preferences);
+      }
       
       if (user) {
         setUser({
@@ -122,7 +158,7 @@ export default function NotificationsPage() {
               push: preferences.push.enabled,
               sms: preferences.sms.enabled,
               trading: preferences.trading.orderFills,
-              marketing: false, // Default value
+              marketing: preferences.email.marketing,
               system: preferences.inApp.system,
             },
           },
@@ -134,11 +170,11 @@ export default function NotificationsPage() {
         title: 'Preferences Saved',
         description: 'Your notification preferences have been updated.',
       });
-    } catch (error) {
+    } catch (error: any) {
       addToast({
         type: 'error',
         title: 'Save Failed',
-        description: 'Failed to save notification preferences. Please try again.',
+        description: error.response?.data?.message || 'Failed to save notification preferences. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -192,6 +228,19 @@ export default function NotificationsPage() {
       <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-primary-600"></div>
     </label>
   );
+
+  if (isLoadingData) {
+    return (
+      <MainLayout user={user}>
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <span className="ml-3 text-neutral-600 dark:text-neutral-400">Loading notification preferences...</span>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout user={user}>

@@ -5,6 +5,7 @@ import { persist } from 'zustand/middleware';
 import { User } from '@/types/user';
 import { authAPI, type LoginCredentials, type RegisterData } from '@/lib/api/auth';
 import { telemetryService } from '@/mocks/services/telemetry-service';
+import { safeConvertApiUser } from '@/utils/user-helpers';
 
 interface AuthState {
   user: User | null;
@@ -30,41 +31,8 @@ interface AuthActions {
 
 interface AuthStore extends AuthState, AuthActions { }
 
-// Helper function to convert API user to frontend User type
-const convertApiUserToUser = (apiUser: any): User => ({
-  id: apiUser.id,
-  name: apiUser.name,
-  email: apiUser.email,
-  username: apiUser.username,
-  avatar: apiUser.avatar,
-  role: apiUser.role as 'user' | 'premium' | 'admin',
-  phone: apiUser.phone,
-  country: apiUser.country,
-  bio: apiUser.bio,
-  timezone: apiUser.timezone,
-  language: apiUser.language,
-  preferences: {
-    theme: 'light',
-    currency: apiUser.tradingPreferences.defaultCurrency as 'USD' | 'EUR' | 'GBP',
-    defaultCurrency: apiUser.tradingPreferences.defaultCurrency,
-    dateFormat: 'DD/MM/YYYY',
-    notifications: {
-      email: apiUser.tradingPreferences.notifications.email,
-      push: apiUser.tradingPreferences.notifications.push,
-      sms: apiUser.tradingPreferences.notifications.sms,
-      trading: apiUser.tradingPreferences.notifications.trading,
-      marketing: apiUser.tradingPreferences.notifications.marketing,
-      system: true // Default value since backend doesn't have this yet
-    }
-  },
-  subscription: {
-    plan: apiUser.subscription.plan as 'free' | 'basic' | 'premium' | 'enterprise',
-    status: apiUser.subscription.status as 'active' | 'inactive' | 'cancelled',
-    expiresAt: apiUser.subscription.endDate ? new Date(apiUser.subscription.endDate) : undefined
-  },
-  createdAt: new Date(),
-  lastLoginAt: new Date()
-});
+// Use the safe conversion function from utils
+const convertApiUserToUser = safeConvertApiUser;
 
 export const useAuthStore = create<AuthStore>()(
   persist(
@@ -174,9 +142,13 @@ export const useAuthStore = create<AuthStore>()(
             error: null
           });
 
-          // Force clear the persisted storage
+          // Force clear all auth-related storage
           if (typeof window !== 'undefined') {
             localStorage.removeItem('auth-store');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('auth-token');
+            localStorage.removeItem('demo-user-settings'); // Clear demo settings too
           }
         }
       },
@@ -189,6 +161,9 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true, error: null });
 
         try {
+          // Import settings API dynamically to avoid circular dependency
+          const { profileAPI } = await import('@/lib/api/settings');
+          
           // Convert our User type to API format
           const apiUserData = {
             name: userData.name,
@@ -197,10 +172,13 @@ export const useAuthStore = create<AuthStore>()(
             country: userData.country,
             bio: userData.bio,
             timezone: userData.timezone,
-            language: userData.language
+            language: userData.language,
+            theme: userData.preferences?.theme,
+            currency: userData.preferences?.currency,
+            dateFormat: userData.preferences?.dateFormat
           };
 
-          const response = await authAPI.updateDetails(apiUserData);
+          const response = await profileAPI.updateProfile(apiUserData);
 
           // Update the user in store
           const { user } = get();
@@ -308,16 +286,30 @@ export const useAuthStore = create<AuthStore>()(
         const storedUser = authAPI.getStoredUser();
 
         if (isAuthenticated && storedUser) {
-          // Convert stored API user to our User type
-          const user = convertApiUserToUser(storedUser);
+          try {
+            // Convert stored API user to our User type with error handling
+            const user = convertApiUserToUser(storedUser);
 
-          set({
-            user,
-            isAuthenticated: true
-          });
+            set({
+              user,
+              isAuthenticated: true
+            });
+          } catch (error) {
+            console.error('Error converting stored user:', error);
+            // If conversion fails, clear auth state
+            set({
+              user: null,
+              isAuthenticated: false,
+              error: null
+            });
+          }
         } else {
-          // For demo purposes, set up a demo user if no authentication
-          get().setupDemoUser();
+          // No authenticated user - stay logged out
+          set({
+            user: null,
+            isAuthenticated: false,
+            error: null
+          });
         }
       },
 
@@ -363,9 +355,10 @@ export const useAuthStore = create<AuthStore>()(
           error: null
         });
 
-        // Store demo token for WebSocket connection
+        // For demo user, we need to either generate a valid token or handle API calls differently
+        // Let's store a demo token that the backend can recognize
         if (typeof window !== 'undefined') {
-          localStorage.setItem('token', 'demo-token');
+          localStorage.setItem('token', 'demo-token-valid'); // Use a recognizable demo token
           localStorage.setItem('user', JSON.stringify(demoUser));
         }
       }

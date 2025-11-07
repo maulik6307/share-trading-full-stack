@@ -27,9 +27,13 @@ const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    
+    // Always send token if it exists (including demo token)
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
     return config;
   },
   (error) => {
@@ -49,6 +53,13 @@ apiClient.interceptors.response.use(
   (error: AxiosError<ApiResponse>) => {
     // Handle common error cases
     if (error.response?.status === 401) {
+      // Check if this is a demo token
+      const token = localStorage.getItem('token');
+      if (token === 'demo-token-valid') {
+        console.log('Demo mode: 401 error, but keeping demo session');
+        return Promise.reject(new Error('Demo mode: Authentication issue'));
+      }
+      
       // Unauthorized - clear token and redirect to login
       localStorage.removeItem('token');
       window.location.href = '/auth/login';

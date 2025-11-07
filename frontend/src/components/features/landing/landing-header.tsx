@@ -15,15 +15,15 @@ import {
   Shield,
   Zap
 } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui';
 import { useTheme } from '@/components/providers/theme-provider';
 
 interface LandingHeaderProps {
   onGetStarted: () => void;
-  onShowAuth: () => void;
 }
 
-export function LandingHeader({ onGetStarted, onShowAuth }: LandingHeaderProps) {
+export function LandingHeader({ onGetStarted }: LandingHeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -50,8 +50,20 @@ export function LandingHeader({ onGetStarted, onShowAuth }: LandingHeaderProps) 
     },
     { label: 'Pricing', href: '#pricing' },
     { label: 'Documentation', href: '/settings/api-docs' },
-    { label: 'Company', href: '#company' },
+    { label: 'Reviews', href: '#testimonials' },
   ];
+
+  const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith('#')) {
+      e.preventDefault();
+      const element = document.getElementById(href.substring(1));
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setActiveDropdown(null);
+        setIsMobileMenuOpen(false);
+      }
+    }
+  };
 
   const handleDropdownToggle = (label: string) => {
     setActiveDropdown(activeDropdown === label ? null : label);
@@ -119,6 +131,7 @@ export function LandingHeader({ onGetStarted, onShowAuth }: LandingHeaderProps) 
                               <motion.a
                                 key={dropdownItem.label}
                                 href={dropdownItem.href}
+                                onClick={(e) => handleSmoothScroll(e, dropdownItem.href)}
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ duration: 0.2, delay: index * 0.05 }}
@@ -144,6 +157,7 @@ export function LandingHeader({ onGetStarted, onShowAuth }: LandingHeaderProps) 
                   ) : (
                     <a
                       href={item.href}
+                      onClick={(e) => handleSmoothScroll(e, item.href)}
                       className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 font-medium"
                     >
                       {item.label}
@@ -180,13 +194,14 @@ export function LandingHeader({ onGetStarted, onShowAuth }: LandingHeaderProps) 
               </Button>
 
               {/* Get Started Button */}
-              <Button
-                onClick={onShowAuth}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                Get Started
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
+              <Link href="/signup">
+                <Button
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  Get Started
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
             </div>
 
             {/* Mobile Menu Button */}
@@ -243,8 +258,8 @@ export function LandingHeader({ onGetStarted, onShowAuth }: LandingHeaderProps) 
                   >
                     <a
                       href={item.href}
+                      onClick={(e) => handleSmoothScroll(e, item.href)}
                       className="block py-3 text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
-                      onClick={() => setIsMobileMenuOpen(false)}
                     >
                       {item.label}
                     </a>
@@ -269,16 +284,15 @@ export function LandingHeader({ onGetStarted, onShowAuth }: LandingHeaderProps) 
                     <Play className="w-4 h-4 mr-2" />
                     Watch Demo
                   </Button>
-                  <Button
-                    onClick={() => {
-                      onShowAuth();
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="w-full justify-center bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                  >
-                    Get Started Free
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+                  <Link href="/signup" className="block">
+                    <Button
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="w-full justify-center bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      Get Started Free
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
                 </motion.div>
               </div>
             </motion.div>

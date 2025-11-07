@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout';
 import { Button, Input, Select, Label, useToast } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
@@ -18,15 +18,59 @@ export default function ProfilePage() {
     theme: (user?.preferences?.theme || 'light') as 'light' | 'dark',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [activeTab, setActiveTab] = useState<'profile' | 'preferences' | 'localization'>('profile');
+
+  // Load profile data on component mount
+  React.useEffect(() => {
+    const loadProfileData = async () => {
+      try {
+        const { profileAPI } = await import('@/lib/api/settings');
+        const response = await profileAPI.getProfile();
+        
+        if (response.data) {
+          const { profile, preferences } = response.data;
+          setFormData({
+            name: profile.name || '',
+            email: profile.email || '',
+            timezone: profile.timezone || 'Asia/Kolkata',
+            defaultCurrency: preferences.defaultCurrency || 'INR',
+            dateFormat: preferences.dateFormat || 'DD/MM/YYYY',
+            theme: (preferences.theme || 'light') as 'light' | 'dark',
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load profile data:', error);
+        addToast({
+          type: 'error',
+          title: 'Load Failed',
+          description: 'Failed to load profile data. Using current user data.',
+        });
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    loadProfileData();
+  }, []); // Empty dependency array - only run once on mount
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { profileAPI } = await import('@/lib/api/settings');
+      
+      const updateData = {
+        name: formData.name,
+        email: formData.email,
+        timezone: formData.timezone,
+        theme: formData.theme,
+        currency: formData.defaultCurrency,
+        dateFormat: formData.dateFormat,
+      };
+
+      await profileAPI.updateProfile(updateData);
       
       if (user) {
         setUser({
@@ -39,6 +83,7 @@ export default function ProfilePage() {
             defaultCurrency: formData.defaultCurrency,
             dateFormat: formData.dateFormat,
             theme: formData.theme as 'light' | 'dark',
+            currency: formData.defaultCurrency as 'USD' | 'EUR' | 'GBP' | 'INR',
           },
         });
       }
@@ -48,11 +93,11 @@ export default function ProfilePage() {
         title: 'Profile Updated',
         description: 'Your profile has been successfully updated.',
       });
-    } catch (error) {
+    } catch (error: any) {
       addToast({
         type: 'error',
         title: 'Update Failed',
-        description: 'Failed to update profile. Please try again.',
+        description: error.response?.data?.message || 'Failed to update profile. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -70,6 +115,19 @@ export default function ProfilePage() {
 
   if (!user) {
     return null;
+  }
+
+  if (isLoadingData) {
+    return (
+      <MainLayout user={user}>
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <span className="ml-3 text-neutral-600 dark:text-neutral-400">Loading profile data...</span>
+          </div>
+        </div>
+      </MainLayout>
+    );
   }
 
   const timezones = [

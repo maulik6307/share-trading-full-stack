@@ -44,8 +44,16 @@ const sendTokenResponse = (user, statusCode, res) => {
           role: user.role,
           isVerified: user.isVerified,
           avatar: user.avatar,
+          phone: user.phone,
+          country: user.country,
+          bio: user.bio,
+          timezone: user.timezone,
+          language: user.language,
           subscription: user.subscription,
-          tradingPreferences: user.tradingPreferences
+          tradingPreferences: user.tradingPreferences,
+          preferences: user.preferences,
+          createdAt: user.createdAt,
+          lastLoginAt: user.lastLogin
         }
       }
     });
