@@ -35,7 +35,10 @@ export function ParameterBuilder({
   const validateParameters = useCallback(() => {
     const newErrors: Record<string, string> = {};
     
-    schema.forEach(param => {
+    // Safety check: ensure schema is an array and filter out undefined elements
+    const validSchema = Array.isArray(schema) ? schema.filter(param => param && param.key) : [];
+    
+    validSchema.forEach(param => {
       const value = parameters[param.key];
       
       // Required field validation
@@ -262,7 +265,7 @@ export function ParameterBuilder({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {schema.map(renderParameter)}
+        {Array.isArray(schema) && schema.filter(param => param && param.key).map(renderParameter)}
       </div>
 
       {Object.keys(errors).length > 0 && Object.keys(touched).length > 0 && (

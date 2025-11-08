@@ -66,9 +66,9 @@ export function StrategyBuilder({
 
   // Generate parameter schema based on strategy type
   const parameterSchema = useMemo((): ParameterSchema[] => {
-    if (strategy.type === 'TEMPLATE' && strategyTemplate) {
+    if (strategy.type === 'TEMPLATE' && strategyTemplate && strategyTemplate.parameterSchema) {
       // Use the parameter schema from the template
-      return strategyTemplate.parameterSchema;
+      return strategyTemplate.parameterSchema.filter(param => param && param.key);
     }
     
     // For custom strategies, return basic parameters
