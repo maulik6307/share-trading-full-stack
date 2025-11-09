@@ -3,7 +3,10 @@ import { Source_Sans_3 } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { AuthProvider } from '@/components/providers/auth-provider'
+import { RouteGuard } from '@/components/auth/route-guard'
 import { ToastProvider } from '@/components/ui/toast'
+import { defaultMetadata } from './metadata'
+import { OrganizationSchema, WebsiteSchema, SoftwareAppSchema } from '@/components/seo/structured-data'
 
 const sourceSans3 = Source_Sans_3({ 
   subsets: ['latin'],
@@ -11,10 +14,7 @@ const sourceSans3 = Source_Sans_3({
   display: 'swap',
 })
 
-export const metadata: Metadata = {
-  title: 'ShareTrading UI MVP',
-  description: 'AI-driven paper trading and backtesting platform',
-}
+export const metadata: Metadata = defaultMetadata
 
 export default function RootLayout({
   children,
@@ -23,12 +23,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <OrganizationSchema />
+        <WebsiteSchema />
+        <SoftwareAppSchema />
+      </head>
       <body className={sourceSans3.className}>
         <ThemeProvider defaultMode="light">
           <AuthProvider>
-            <ToastProvider>
-              {children}
-            </ToastProvider>
+            <RouteGuard>
+              <ToastProvider>
+                {children}
+              </ToastProvider>
+            </RouteGuard>
           </AuthProvider>
         </ThemeProvider>
       </body>

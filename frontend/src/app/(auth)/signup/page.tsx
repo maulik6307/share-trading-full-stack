@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
@@ -22,6 +22,8 @@ import { useAuthStore } from '@/stores/auth-store';
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect') || '/dashboard';
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -83,7 +85,7 @@ export default function SignupPage() {
         description: 'Welcome to ShareTrading. Let\'s get you started.',
       });
       
-      router.push('/dashboard');
+      router.push(redirectUrl);
     } catch (error) {
       addToast({
         type: 'error',

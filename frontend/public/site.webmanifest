@@ -1,0 +1,49 @@
+{
+  "name": "ShareTrading - AI Trading Platform",
+  "short_name": "ShareTrading",
+  "description": "AI-powered paper trading and backtesting platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "business", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your trading dashboard",
+      "url": "/dashboard",
+      "icons": []
+    },
+    {
+      "name": "Paper Trading",
+      "short_name": "Trade",
+      "description": "Start paper trading",
+      "url": "/paper-trading",
+      "icons": []
+    },
+    {
+      "name": "Backtesting",
+      "short_name": "Backtest",
+      "description": "Run strategy backtests",
+      "url": "/backtesting",
+      "icons": []
+    }
+  ]
+}

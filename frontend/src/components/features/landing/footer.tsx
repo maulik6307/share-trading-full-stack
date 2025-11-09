@@ -14,41 +14,38 @@ import {
 export function Footer() {
   const footerLinks = {
     product: [
-      { name: 'Features', href: '#features' },
-      { name: 'Pricing', href: '#pricing' },
-      { name: 'API Documentation', href: '/settings/api-docs' },
-      { name: 'Integrations', href: '#integrations' },
+      { name: 'Features', href: '/#features' },
+      { name: 'Pricing', href: '/#pricing' },
+      { name: 'Demo', href: '/demo' },
+      { name: 'Strategies', href: '/strategies' },
     ],
     company: [
-      { name: 'About Us', href: '#about' },
-      { name: 'Careers', href: '#careers' },
-      { name: 'Blog', href: '#blog' },
-      { name: 'Press', href: '#press' },
-    ],
-    support: [
-      { name: 'Help Center', href: '/settings/support' },
-      { name: 'Community', href: '#community' },
+      { name: 'About Us', href: '/#about' },
       { name: 'Contact Us', href: '/contact' },
-      { name: 'Status', href: '#status' },
+      { name: 'Support', href: '/settings/support' },
+    ],
+    resources: [
+      { name: 'Dashboard', href: '/dashboard' },
+      { name: 'Backtesting', href: '/backtesting' },
+      { name: 'Trading', href: '/trading' },
+      { name: 'Settings', href: '/settings' },
     ],
     legal: [
       { name: 'Privacy Policy', href: '/privacy' },
       { name: 'Terms of Service', href: '/terms' },
-      { name: 'Cookie Policy', href: '#cookies' },
-      { name: 'Security', href: '#security' },
     ],
   };
 
   const socialLinks = [
-    { name: 'Twitter', icon: Twitter, href: '#twitter' },
-    { name: 'LinkedIn', icon: Linkedin, href: '#linkedin' },
-    { name: 'GitHub', icon: Github, href: '#github' },
+    { name: 'Twitter', icon: Twitter, href: 'https://twitter.com' },
+    { name: 'LinkedIn', icon: Linkedin, href: 'https://linkedin.com' },
+    { name: 'GitHub', icon: Github, href: 'https://github.com' },
   ];
 
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-2">
             <motion.div
@@ -128,16 +125,16 @@ export function Footer() {
             </ul>
           </motion.div>
 
-          {/* Support Links */}
+          {/* Resources Links */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
             viewport={{ once: true }}
           >
-            <h3 className="text-lg font-semibold mb-4">Support</h3>
+            <h3 className="text-lg font-semibold mb-4">Resources</h3>
             <ul className="space-y-2">
-              {footerLinks.support.map((link) => (
+              {footerLinks.resources.map((link) => (
                 <li key={link.name}>
                   <a
                     href={link.href}
@@ -190,6 +187,8 @@ export function Footer() {
               <a
                 key={social.name}
                 href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors duration-200"
                 aria-label={social.name}
               >

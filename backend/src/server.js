@@ -17,6 +17,7 @@ const strategyRoutes = require('./routes/strategy');
 const backtestRoutes = require('./routes/backtest');
 const settingsRoutes = require('./routes/settings');
 const supportRoutes = require('./routes/support');
+const contactRoutes = require('./routes/contact');
 
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -96,6 +97,7 @@ app.use(`${apiPrefix}/${apiVersion}/strategies`, strategyRoutes);
 app.use(`${apiPrefix}/${apiVersion}/backtests`, backtestRoutes);
 app.use(`${apiPrefix}/${apiVersion}/settings`, settingsRoutes);
 app.use(`${apiPrefix}/${apiVersion}/support`, supportRoutes);
+app.use(`${apiPrefix}/${apiVersion}/contact`, contactRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {

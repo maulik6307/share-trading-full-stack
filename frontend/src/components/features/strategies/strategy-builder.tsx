@@ -44,7 +44,12 @@ export function StrategyBuilder({
   className,
 }: StrategyBuilderProps) {
   const [activeTab, setActiveTab] = useState<string>('parameters');
-  const [localStrategy, setLocalStrategy] = useState<Strategy>(strategy);
+  const [localStrategy, setLocalStrategy] = useState<Strategy>({
+    ...strategy,
+    parameters: strategy.parameters || {},
+    code: strategy.code || '',
+    tags: strategy.tags || []
+  });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [parameterErrors, setParameterErrors] = useState<Record<string, string>>({});
   const [codeErrors, setCodeErrors] = useState<string[]>([]);
@@ -108,7 +113,12 @@ export function StrategyBuilder({
 
   // Update local strategy when prop changes
   useEffect(() => {
-    setLocalStrategy(strategy);
+    setLocalStrategy({
+      ...strategy,
+      parameters: strategy.parameters || {},
+      code: strategy.code || '',
+      tags: strategy.tags || []
+    });
     setHasUnsavedChanges(false);
   }, [strategy]);
 

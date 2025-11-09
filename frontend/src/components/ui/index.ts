@@ -19,6 +19,9 @@ export type { Toast, ToastType } from './toast';
 
 export { ThemeToggle } from './theme-toggle';
 
+export { Logo } from './logo';
+export type { LogoProps } from './logo';
+
 export { Badge } from './badge';
 export type { BadgeProps } from './badge';
 

@@ -127,7 +127,7 @@ export default function BacktestingPage() {
               Quick Start
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {strategies.slice(0, 6).map((strategy) => (
+              {strategies.filter(s => s && s._id && s.name).slice(0, 6).map((strategy) => (
                 <button
                   key={strategy._id}
                   onClick={() => handleCreateBacktest(strategy)}
@@ -139,16 +139,16 @@ export default function BacktestingPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="font-medium text-neutral-900 dark:text-white truncate">
-                        {strategy.name}
+                        {strategy.name || 'Unnamed Strategy'}
                       </h3>
                       <p className="text-sm text-neutral-600 dark:text-neutral-400 truncate">
-                        {strategy.description}
+                        {strategy.description || 'No description'}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                      {strategy.type}
+                      {strategy.type || 'CODE'}
                     </span>
                     <div className="flex items-center space-x-1 text-primary-600 dark:text-primary-400">
                       <Play className="h-3 w-3" />

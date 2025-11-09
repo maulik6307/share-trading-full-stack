@@ -57,14 +57,14 @@ export function BacktestConfigModal({
 
   // Set default dates and name when strategy changes
   useEffect(() => {
-    if (strategy) {
+    if (strategy && strategy.name) {
       const endDate = new Date();
       const startDate = new Date();
       startDate.setMonth(startDate.getMonth() - 6); // Default to 6 months back
       
       setConfig(prev => ({
         ...prev,
-        name: `${strategy.name} Backtest - ${new Date().toLocaleDateString()}`,
+        name: `${strategy.name || 'Strategy'} Backtest - ${new Date().toLocaleDateString()}`,
         startDate: startDate.toISOString().split('T')[0],
         endDate: endDate.toISOString().split('T')[0],
       }));

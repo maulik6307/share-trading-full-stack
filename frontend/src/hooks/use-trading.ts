@@ -33,7 +33,10 @@ export function useTrading() {
 
       setPortfolio(portfolioData);
       setPositions(positionsData);
-      setActiveOrders(activeOrdersData);
+      // Safety filter: only show PENDING and PARTIALLY_FILLED orders
+      setActiveOrders(activeOrdersData.filter(order => 
+        order.status === 'PENDING' || order.status === 'PARTIALLY_FILLED'
+      ));
       setOrders(ordersData.orders);
 
     } catch (err) {
@@ -57,7 +60,10 @@ export function useTrading() {
         tradingAPI.getOrders({ limit: 100 })
       ]);
 
-      setActiveOrders(activeOrdersData);
+      // Safety filter: only show PENDING and PARTIALLY_FILLED orders
+      setActiveOrders(activeOrdersData.filter(order => 
+        order.status === 'PENDING' || order.status === 'PARTIALLY_FILLED'
+      ));
       setOrders(ordersData.orders);
     } catch (err) {
       console.error('Failed to refresh order data:', err);

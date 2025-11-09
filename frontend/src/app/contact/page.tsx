@@ -12,32 +12,32 @@ import {
   Send,
   MessageCircle,
   Clock,
-  CheckCircle
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { useContactForm } from '@/lib/hooks/use-contact';
+import { ContactFormData } from '@/lib/api/contact';
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ContactFormData>({
     name: '',
     email: '',
     subject: '',
     message: ''
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  
+  const { isSubmitting, submitContactForm, error, success } = useContactForm();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
-    // Simulate form submission
-    setTimeout(() => {
-      setSubmitted(true);
+    const submitted = await submitContactForm(formData);
+    
+    if (submitted) {
+      // Reset form on success
       setFormData({ name: '', email: '', subject: '', message: '' });
-      setIsSubmitting(false);
-      
-      setTimeout(() => setSubmitted(false), 5000);
-    }, 1000);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -157,7 +157,18 @@ export default function ContactPage() {
                 Fill out the form below and we&apos;ll get back to you as soon as possible.
               </p>
               
-              {submitted && (
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-3"
+                >
+                  <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                  <p className="text-red-800 dark:text-red-200">{error}</p>
+                </motion.div>
+              )}
+              
+              {success && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -180,7 +191,8 @@ export default function ContactPage() {
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       required
-                      className="w-full h-12 px-4 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={isSubmitting}
+                      className="w-full h-12 px-4 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
                   <div>
@@ -193,7 +205,8 @@ export default function ContactPage() {
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
                       required
-                      className="w-full h-12 px-4 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={isSubmitting}
+                      className="w-full h-12 px-4 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -207,7 +220,8 @@ export default function ContactPage() {
                     value={formData.subject}
                     onChange={(e) => handleInputChange('subject', e.target.value)}
                     required
-                    className="w-full h-12 px-4 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={isSubmitting}
+                    className="w-full h-12 px-4 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -220,18 +234,28 @@ export default function ContactPage() {
                     onChange={(e) => handleInputChange('message', e.target.value)}
                     required
                     rows={6}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    disabled={isSubmitting}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <motion.div whileHover={{ scale: isSubmitting ? 1 : 1.02 }} whileTap={{ scale: isSubmitting ? 1 : 0.98 }}>
                   <Button
                     type="submit"
                     loading={isSubmitting}
                     disabled={isSubmitting}
-                    className="w-full h-12 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 font-semibold rounded-xl flex items-center justify-center gap-2"
+                    className="w-full h-12 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting ? 'Sending...' : 'Send Message'}
-                    <Send className="w-5 h-5" />
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white dark:border-gray-900"></div>
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Send Message</span>
+                        <Send className="w-5 h-5" />
+                      </>
+                    )}
                   </Button>
                 </motion.div>
               </form>

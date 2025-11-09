@@ -361,6 +361,70 @@ class EmailService {
       text
     });
   }
+
+  async sendContactConfirmation(email, name, subject) {
+    const emailSubject = 'We received your message - ShareTrading';
+    const html = `
+      <h2>Thank you for contacting us!</h2>
+      <p>Hi ${name},</p>
+      <p>We've received your message regarding: <strong>${subject}</strong></p>
+      <p>Our support team will review your inquiry and get back to you within 24-48 hours.</p>
+      <p>If your matter is urgent, please reply to this email with "URGENT" in the subject line.</p>
+      <br>
+      <p>Best regards,<br>The ShareTrading Team</p>
+    `;
+    const text = `
+      Thank you for contacting us!
+      
+      Hi ${name},
+      
+      We've received your message regarding: ${subject}
+      
+      Our support team will review your inquiry and get back to you within 24-48 hours.
+      
+      Best regards,
+      The ShareTrading Team
+    `;
+
+    return this.sendEmail({
+      email,
+      subject: emailSubject,
+      html,
+      text
+    });
+  }
+
+  async sendContactNotification({ name, email, subject, message, contactId }) {
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+    const emailSubject = `New Contact Form Submission: ${subject}`;
+    const html = `
+      <h2>New Contact Form Submission</h2>
+      <p><strong>From:</strong> ${name} (${email})</p>
+      <p><strong>Subject:</strong> ${subject}</p>
+      <p><strong>Message:</strong></p>
+      <p>${message.replace(/\n/g, '<br>')}</p>
+      <p><strong>Contact ID:</strong> ${contactId}</p>
+      <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
+      <br>
+      <p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/contacts/${contactId}">View in Admin Panel</a></p>
+    `;
+    const text = `
+      New Contact Form Submission
+      
+      From: ${name} (${email})
+      Subject: ${subject}
+      Message: ${message}
+      Contact ID: ${contactId}
+      Submitted: ${new Date().toLocaleString()}
+    `;
+
+    return this.sendEmail({
+      email: adminEmail,
+      subject: emailSubject,
+      html,
+      text
+    });
+  }
 }
 
 module.exports = new EmailService();

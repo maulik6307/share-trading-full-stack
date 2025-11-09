@@ -1,0 +1,21 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow private pages
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /backtesting/results
+Disallow: /strategies/builder
+Disallow: /paper-trading
+Disallow: /api/
+
+# Allow public pages
+Allow: /
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+Allow: /demo
+
+# Sitemap location
+Sitemap: https://share-trading-full-stack.vercel.app/sitemap.xml
