@@ -79,17 +79,16 @@ export default function SignupPage() {
       const username = formData.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
       await signUp(formData.name, formData.email, username, formData.password, formData.phone, formData.country);
       
+      console.log('Signup successful, redirecting to:', redirectUrl);
+      
       addToast({
         type: 'success',
         title: 'Account created!',
         description: 'Welcome to ShareTrading. Let\'s get you started.',
       });
       
-      // Small delay to ensure auth state is updated before navigation
-      setTimeout(() => {
-        console.log('Redirecting to:', redirectUrl);
-        router.replace(redirectUrl);
-      }, 100);
+      // Use window.location for more reliable redirect
+      window.location.href = redirectUrl;
     } catch (error) {
       addToast({
         type: 'error',

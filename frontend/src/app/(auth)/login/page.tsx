@@ -58,17 +58,17 @@ export default function LoginPage() {
 
     try {
       await signIn(formData.email, formData.password);
+      
+      console.log('Login successful, redirecting to:', redirectUrl);
+      
       addToast({
         type: 'success',
         title: 'Welcome back!',
         description: 'You have successfully signed in.',
       });
       
-      // Small delay to ensure auth state is updated before navigation
-      setTimeout(() => {
-        console.log('Redirecting to:', redirectUrl);
-        router.replace(redirectUrl);
-      }, 100);
+      // Use window.location for more reliable redirect
+      window.location.href = redirectUrl;
     } catch (error) {
       addToast({
         type: 'error',
