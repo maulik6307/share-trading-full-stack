@@ -3,7 +3,6 @@ import { Source_Sans_3 } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { AuthProvider } from '@/components/providers/auth-provider'
-import { RouteGuard } from '@/components/auth/route-guard'
 import { ToastProvider } from '@/components/ui/toast'
 import { defaultMetadata } from './metadata'
 import { OrganizationSchema, WebsiteSchema, SoftwareAppSchema } from '@/components/seo/structured-data'
@@ -31,11 +30,9 @@ export default function RootLayout({
       <body className={sourceSans3.className}>
         <ThemeProvider defaultMode="light">
           <AuthProvider>
-            <RouteGuard>
-              <ToastProvider>
-                {children}
-              </ToastProvider>
-            </RouteGuard>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

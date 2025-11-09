@@ -22,8 +22,6 @@ import { useAuthStore } from '@/stores/auth-store';
 
 export default function SignupPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect') || '/dashboard';
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -79,16 +77,14 @@ export default function SignupPage() {
       const username = formData.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
       await signUp(formData.name, formData.email, username, formData.password, formData.phone, formData.country);
       
-      console.log('Signup successful, redirecting to:', redirectUrl);
-      
       addToast({
         type: 'success',
         title: 'Account created!',
         description: 'Welcome to ShareTrading. Let\'s get you started.',
       });
       
-      // Use window.location for more reliable redirect
-      window.location.href = redirectUrl;
+      // Direct redirect to dashboard
+      window.location.href = '/dashboard';
     } catch (error) {
       addToast({
         type: 'error',

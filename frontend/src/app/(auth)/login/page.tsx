@@ -19,8 +19,6 @@ import { useAuthStore } from '@/stores/auth-store';
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect') || '/dashboard';
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -59,16 +57,14 @@ export default function LoginPage() {
     try {
       await signIn(formData.email, formData.password);
       
-      console.log('Login successful, redirecting to:', redirectUrl);
-      
       addToast({
         type: 'success',
         title: 'Welcome back!',
         description: 'You have successfully signed in.',
       });
       
-      // Use window.location for more reliable redirect
-      window.location.href = redirectUrl;
+      // Direct redirect to dashboard
+      window.location.href = '/dashboard';
     } catch (error) {
       addToast({
         type: 'error',
