@@ -44,13 +44,20 @@ export function RouteGuard({ children }: RouteGuardProps) {
     // Don't do anything while loading
     if (isLoading) return;
 
+    // Check if current route is an auth route
+    const isAuthRoute = authRoutes.some(route => 
+      pathname.startsWith(route)
+    );
+
+    // Don't run guard logic on auth pages - let them handle their own redirects
+    if (isAuthRoute) return;
+
     // Check if current route is protected
     const isProtectedRoute = protectedRoutes.some(route => 
       pathname.startsWith(route)
     );
 
-    // Only protect routes - don't redirect away from auth pages
-    // Let the auth pages handle their own redirects after successful login/signup
+    // Only protect routes - redirect to login if not authenticated
     if (isProtectedRoute && !isAuthenticated) {
       // Save the intended destination
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}`;

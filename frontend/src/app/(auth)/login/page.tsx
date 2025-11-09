@@ -67,7 +67,7 @@ export default function LoginPage() {
       // Small delay to ensure auth state is updated before navigation
       setTimeout(() => {
         console.log('Redirecting to:', redirectUrl);
-        router.push(redirectUrl);
+        router.replace(redirectUrl);
       }, 100);
     } catch (error) {
       addToast({
