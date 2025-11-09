@@ -41,31 +41,20 @@ export function RouteGuard({ children }: RouteGuardProps) {
   const { isAuthenticated, isLoading } = useAuthStore();
 
   useEffect(() => {
+    // Don't do anything while loading
+    if (isLoading) return;
+
     // Check if current route is protected
     const isProtectedRoute = protectedRoutes.some(route => 
       pathname.startsWith(route)
     );
 
-    // Check if current route is an auth route
-    const isAuthRoute = authRoutes.some(route => 
-      pathname.startsWith(route)
-    );
-
-    // Check if current route is public
-    const isPublicRoute = publicRoutes.some(route => 
-      pathname === route || pathname.startsWith(route)
-    );
-
-    // If it's a protected route and user is not authenticated
-    if (isProtectedRoute && !isAuthenticated && !isLoading) {
+    // Only protect routes - don't redirect away from auth pages
+    // Let the auth pages handle their own redirects after successful login/signup
+    if (isProtectedRoute && !isAuthenticated) {
       // Save the intended destination
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
       router.push(redirectUrl);
-    }
-
-    // If user is authenticated and trying to access auth pages, redirect to dashboard
-    if (isAuthenticated && isAuthRoute && !isLoading) {
-      router.push('/dashboard');
     }
   }, [pathname, isAuthenticated, isLoading, router]);
 

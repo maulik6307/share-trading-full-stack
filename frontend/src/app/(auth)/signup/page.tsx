@@ -85,7 +85,11 @@ export default function SignupPage() {
         description: 'Welcome to ShareTrading. Let\'s get you started.',
       });
       
-      router.push(redirectUrl);
+      // Small delay to ensure auth state is updated before navigation
+      setTimeout(() => {
+        console.log('Redirecting to:', redirectUrl);
+        router.push(redirectUrl);
+      }, 100);
     } catch (error) {
       addToast({
         type: 'error',

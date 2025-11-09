@@ -63,7 +63,12 @@ export default function LoginPage() {
         title: 'Welcome back!',
         description: 'You have successfully signed in.',
       });
-      router.push(redirectUrl);
+      
+      // Small delay to ensure auth state is updated before navigation
+      setTimeout(() => {
+        console.log('Redirecting to:', redirectUrl);
+        router.push(redirectUrl);
+      }, 100);
     } catch (error) {
       addToast({
         type: 'error',
